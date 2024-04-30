@@ -155,8 +155,9 @@ class ContextCiter:
 
         cur_start_index = 0
         for separator, part in zip(separators, parts):
+            cur_start_index += len(separator)
             start_indices.append(cur_start_index)
-            cur_start_index += len(separator) + len(part)
+            cur_start_index += len(part)
 
         separated_str = highlight_word_indices(parts, start_indices, separators, color)
         return separated_str
