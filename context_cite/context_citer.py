@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import torch as ch
 from typing import Dict, Any, Optional
-from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .context_partitioner import BaseContextPartitioner, PARTITION_TYPE_TO_PARTITIONER
 from .lasso import LassoRegression
@@ -10,6 +9,8 @@ from .utils import (
     get_masks_and_logit_probs,
     aggregate_logit_probs,
     split_into_sentences,
+    split_into_words,
+    highlight_word_indices,
     get_formatted_scores_and_sources,
 )
 
@@ -26,10 +27,10 @@ class ContextCiter:
         query: str,
         partition_type: str = "sentence",
         generate_kwargs: Optional[Dict[str, Any]] = None,
-        num_masks: int = 256,
-        mask_alpha: float = 0.5,  # rename
+        num_masks: int = 64,
+        ablation_keep_prob: float = 0.5,
         batch_size: int = 1,
-        solver: LassoRegression = LassoRegression(),
+        solver: LassoRegression = LassoRegression(lasso_alpha=0.01),
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -38,27 +39,33 @@ class ContextCiter:
         self.query = query
         self.generate_kwargs = generate_kwargs or DEFAULT_GENERATE_KWARGS
         self.num_masks = num_masks
-        self.mask_alpha = mask_alpha
+        self.ablation_keep_prob = ablation_keep_prob
         self.batch_size = batch_size
         self.solver = solver
         self._cache = {}
 
-        # allow batched inference
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
     @classmethod
     def from_pretrained(
         cls,
-        model_name_or_path,
+        pretrained_model_name_or_path,
         context: str,
         query: str,
         partition_type: str = "sentence",
+        device: str = "cuda",
+        model_kwargs: Dict[str, Any] = {},
+        tokenizer_kwargs: Dict[str, Any] = {},
         generate_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        # TODO: Add kwargs
-        model = AutoModelForCausalLM.from_pretrained(model_name_or_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            pretrained_model_name_or_path, **model_kwargs
+        )
+        model.to(device)
+        tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path, **tokenizer_kwargs
+        )
         return cls(model, tokenizer, context, query, partition_type, generate_kwargs)
 
     def _get_prompt_and_ids(self, mask: Optional[np.ndarray] = None):
@@ -115,23 +122,31 @@ class ContextCiter:
             return self._output[char_response_start:]
 
     @property
-    def response_metadata(self):
+    def response_with_indices(self, split_by="word", color=True) -> [str, pd.DataFrame]:
+        """
+        Split the response into parts. Returns a string with the original
+        response, where in front of each part the starting index of the part is
+        printed in square brackets.
+
+        Arguments:
+            split_by: str, one of "word" or "sentence"
+            color: bool, whether to color the starting index
+        """
         start_indices = []
-        end_indices = []
-        sentences, separators = split_into_sentences(self.response)
+        if split_by == "word":
+            parts, separators = split_into_words(self.response)
+        elif split_by == "sentence":
+            parts, separators = split_into_sentences(self.response)
+        else:
+            raise ValueError(f"Invalid split_by: {split_by}")
+
         cur_start_index = 0
-        for separator, sentence in zip(separators, sentences):
-            cur_start_index += len(separator)
-            cur_end_index = cur_start_index + len(sentence)
+        for separator, part in zip(separators, parts):
             start_indices.append(cur_start_index)
-            end_indices.append(cur_end_index)
-            cur_start_index = cur_end_index
-        metadata_dict = {
-            "start_index": start_indices,
-            "end_index": end_indices,
-            "sentence": sentences,
-        }
-        return pd.DataFrame.from_dict(metadata_dict)
+            cur_start_index += len(separator) + len(part)
+
+        separated_str = highlight_word_indices(parts, start_indices, separators, color)
+        return separated_str
 
     @property
     def num_sources(self):
@@ -176,7 +191,7 @@ class ContextCiter:
             self.num_sources,
             get_prompt_ids,
             self._response_ids,
-            self.mask_alpha,
+            self.ablation_keep_prob,
             self.batch_size,
         )
 
@@ -226,14 +241,13 @@ class ContextCiter:
             return_extras=return_extras,
         )
 
-    def show_attributions(self, start=None, end=None):
-        scores = self.get_scores(start_index=start, end_index=end)
+    def show_attributions(self, start_idx=None, end_idx=None):
+        scores = self.get_attributions(start_index=start_idx, end_index=end_idx)
         order = scores.argsort()[::-1]
         selected_scores = []
         selected_sources = []
         for i in order:
-            if scores[i] >= 0:
-                selected_scores.append(scores[i])
-                selected_sources.append(self.get_source(i))
+            selected_scores.append(scores[i])
+            selected_sources.append(self.get_source(i))
         df = get_formatted_scores_and_sources(selected_scores, selected_sources)
         return df

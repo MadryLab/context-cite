@@ -12,14 +12,53 @@ nltk.download("punkt")
 
 
 def split_into_sentences(text: str) -> Tuple[List[str], List[str]]:
-    sentences = nltk.sent_tokenize(text)
+    """Split text into sentences and return the sentences and separators."""
+    sentences = []
     separators = []
+
+    # first split by newlines
+    lines = text.splitlines()
+    for line in lines:
+        sentences.extend(nltk.sent_tokenize(line))
+
     cur_start = 0
     for sentence in sentences:
         cur_end = text.find(sentence, cur_start)
         separators.append(text[cur_start:cur_end])
         cur_start = cur_end + len(sentence)
     return sentences, separators
+
+
+def split_into_words(text: str) -> Tuple[List[str], List[str]]:
+    """Split text into words and return the words and separators."""
+    words = nltk.word_tokenize(text)
+    separators = []
+    cur_start = 0
+    for word in words:
+        cur_end = text.find(word, cur_start)
+        separators.append(text[cur_start:cur_end])
+        cur_start = cur_end + len(word)
+    return words, separators
+
+
+def highlight_word_indices(words, indices, separators, color: bool):
+    formatted_words = []
+
+    # ANSI escape code for red color
+    if color:
+        # RED = "\033[91m"
+        RED = "\033[36m"  # ANSI escape code for light gray
+        RESET = "\033[0m"  # Reset color to default
+    else:
+        RED = ""
+        RESET = ""
+
+    for word, idx in zip(words, indices):
+        # Wrap index with red color
+        formatted_words.append(f"{RED}[{idx}]{RESET}{word}")
+
+    result = "".join(sep + word for sep, word in zip(separators, formatted_words))
+    return result
 
 
 def create_mask(num_sources, alpha, seed):
