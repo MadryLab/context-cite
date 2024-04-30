@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "context_cite"
+version = "0.0.1"
+authors = [
+  { name="MadryLab", email="contextcite@mit.edu" },
+]
+description = "Context Attribution for LLMs"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = ["torch", "transformers"]
+
+[tool.setuptools.packages.find]
+exclude = ["notebooks*"]
+
+[project.urls]
+Homepage = "https://github.com/MadryLab/context_cite"
+Issues = "https://github.com/MadryLab/context_cite/issues"
+
