@@ -197,54 +197,33 @@ class ContextCiter:
         return self._cache["reg_logit_probs"]
 
     def _get_scores_for_ids_range(
-        self, ids_start_index, ids_end_index, return_extras=False, eval_size=0
+        self, ids_start_idx, ids_end_idx, return_extras=False
     ):
 
-        outputs = aggregate_logit_probs(
-            self._logit_probs[:, ids_start_index:ids_end_index]
-        )
-        if eval_size > 0:
-            masks_train, masks_test, outputs_train, outputs_test = train_test_split(
-                self._masks,
-                outputs,
-                test_size=eval_size,
-                random_state=0,
-            )
-            num_output_tokens = ids_end_index - ids_start_index
-            weight, bias = solver.fit(masks_train, outputs_train, num_output_tokens)
-            preds_test = masks_test @ weight.T + bias
-            extras = {
-                "y_test": outputs_test,
-                "preds_test": preds_test,
-                "weight": weight,
-                "bias": bias,
-            }
-        else:
-            weight, bias = _fit_lasso_with_normalized_outputs(self._masks, outputs)
-            extras = {"weight": weight, "bias": bias}
+        outputs = aggregate_logit_probs(self._logit_probs[:, ids_start_idx:ids_end_idx])
+        num_output_tokens = ids_end_idx - ids_start_idx
+        weight, bias = self.solver.fit(self._masks, outputs, num_output_tokens)
+        extras = {"bias": bias}
         if return_extras:
             return weight, extras
         else:
             return weight
 
-    def get_scores(
-        self, start_index=None, end_index=None, return_extras=False, eval_size=0
-    ):
+    def get_attributions(self, start_index=None, end_index=None, return_extras=False):
         if self.num_sources == 0:
             return np.array([])
-        ids_start_index, ids_end_index = self._indices_to_token_indices(
+        ids_start_idx, ids_end_idx = self._indices_to_token_indices(
             start_index, end_index
         )
         selected = self.response[start_index:end_index]
         attributed = self.tokenizer.decode(
-            self._response_ids[ids_start_index:ids_end_index]
+            self._response_ids[ids_start_idx:ids_end_idx]
         )
         assert selected.strip() in attributed.strip()
         return self._get_scores_for_ids_range(
-            ids_start_index,
-            ids_end_index,
+            ids_start_idx,
+            ids_end_idx,
             return_extras=return_extras,
-            eval_size=eval_size,
         )
 
     def show_attributions(self, start=None, end=None):

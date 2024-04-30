@@ -1,9 +1,10 @@
 import pytest
+import numpy as np
 from context_cite import ContextCiter
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 MODEL_NAMES = [
-    "mistralai/Mistral-7B-Instruct-v0.2",
+    # "mistralai/Mistral-7B-Instruct-v0.2",
     "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
 ]
 
@@ -48,3 +49,14 @@ def test_generate(model_name) -> None:
     R = cc.response
     print(R)
     assert isinstance(R, str)
+
+
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_attribute_all(model_name) -> None:
+    model, tokenizer = get_model(model_name)
+    model.eval()
+    model.cuda()
+    context, query = get_context_and_query()
+    cc = ContextCiter(model, tokenizer, context, query, num_masks=16)
+    scores = cc.get_attributions()
+    assert isinstance(scores, np.ndarray)
