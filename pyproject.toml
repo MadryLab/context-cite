@@ -19,8 +19,8 @@ classifiers = [
 dependencies = ["torch", "transformers", "pandas", "scikit-learn"]
 
 [project.optional-dependencies]
+optional = ["langchain", "scipy"]
 test = ["pytest"]
-eval = ["scipy"]
 
 
 [tool.setuptools.packages.find]
