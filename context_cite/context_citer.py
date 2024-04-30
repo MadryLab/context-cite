@@ -2,13 +2,10 @@ import numpy as np
 import pandas as pd
 import torch as ch
 from typing import Dict, Any, Optional
-from scipy.stats import spearmanr
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Lasso
-from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .context_partitioner import BaseContextPartitioner, PARTITION_TYPE_TO_PARTITIONER
+from .lasso import LassoRegression
 from .utils import (
     get_masks_and_logit_probs,
     aggregate_logit_probs,
@@ -30,9 +27,9 @@ class ContextCiter:
         partition_type: str = "sentence",
         generate_kwargs: Optional[Dict[str, Any]] = None,
         num_masks: int = 256,
-        mask_alpha: float = 0.5,
+        mask_alpha: float = 0.5,  # rename
         batch_size: int = 1,
-        lasso_alpha: float = 0.01,
+        solver: LassoRegression = LassoRegression(),
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -43,8 +40,12 @@ class ContextCiter:
         self.num_masks = num_masks
         self.mask_alpha = mask_alpha
         self.batch_size = batch_size
-        self.lasso_alpha = lasso_alpha
+        self.solver = solver
         self._cache = {}
+
+        # allow batched inference
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
     @classmethod
     def from_pretrained(
@@ -195,25 +196,9 @@ class ContextCiter:
             )
         return self._cache["reg_logit_probs"]
 
-    def _fit_lasso(self, masks, outputs):
-        X = masks.astype(np.float32)
-        Y = outputs
-        scaler = StandardScaler()
-        lasso = Lasso(alpha=self.lasso_alpha, random_state=0, fit_intercept=True)
-        pipeline = make_pipeline(scaler, lasso)
-        pipeline.fit(X, Y)
-        # Pipeline is ((X - scaler.mean_) / scaler.scale_) @ lasso.coef_.T + lasso.intercept_
-        weight = lasso.coef_ / scaler.scale_
-        bias = lasso.intercept_ - (scaler.mean_ / scaler.scale_) @ lasso.coef_.T
-        return weight, bias
-
     def _get_scores_for_ids_range(
         self, ids_start_index, ids_end_index, return_extras=False, eval_size=0
     ):
-        def _fit_lasso_with_normalized_outputs(masks, outputs):
-            num_output_tokens = ids_end_index - ids_start_index
-            weight, bias = self._fit_lasso(masks, outputs / num_output_tokens)
-            return weight * num_output_tokens, bias * num_output_tokens
 
         outputs = aggregate_logit_probs(
             self._logit_probs[:, ids_start_index:ids_end_index]
@@ -225,17 +210,14 @@ class ContextCiter:
                 test_size=eval_size,
                 random_state=0,
             )
-            weight, bias = _fit_lasso_with_normalized_outputs(
-                masks_train, outputs_train
-            )
+            num_output_tokens = ids_end_index - ids_start_index
+            weight, bias = solver.fit(masks_train, outputs_train, num_output_tokens)
             preds_test = masks_test @ weight.T + bias
-            lds = spearmanr(preds_test, outputs_test).statistic
             extras = {
                 "y_test": outputs_test,
                 "preds_test": preds_test,
                 "weight": weight,
                 "bias": bias,
-                "LDS": lds,
             }
         else:
             weight, bias = _fit_lasso_with_normalized_outputs(self._masks, outputs)
