@@ -2,8 +2,9 @@ import nltk
 import numpy as np
 import pandas as pd
 import torch as ch
+from numpy.typing import NDArray
 from tqdm.auto import tqdm
-from typing import List, Tuple
+from typing import Any, List, Optional, Tuple
 from datasets import Dataset
 from torch.utils.data import DataLoader
 from transformers import DataCollatorForSeq2Seq
@@ -136,12 +137,17 @@ def get_masks_and_logit_probs(
     num_sources,
     get_prompt_ids,
     response_ids,
-    alpha,
+    ablation_keep_prob,
     batch_size,
     base_seed=0,
 ):
     masks, dataset = create_regression_dataset(
-        num_masks, num_sources, get_prompt_ids, response_ids, alpha, base_seed=base_seed
+        num_masks,
+        num_sources,
+        get_prompt_ids,
+        response_ids,
+        ablation_keep_prob,
+        base_seed=base_seed,
     )
     logit_probs = get_response_logit_probs(
         dataset, model, tokenizer, len(response_ids), batch_size
@@ -185,6 +191,24 @@ def _apply_color_scale(df):
     return df.style.map(lambda val: _color_scale(val, max_val), subset=["Score"])
 
 
-def get_formatted_scores_and_sources(scores, sources):
-    df = pd.DataFrame.from_dict({"Score": scores, "Source": sources})
-    return _apply_color_scale(df).format(precision=3)
+def get_attributions_df(
+    attributions: NDArray[Any],
+    context_partitioner,
+    top_k: Optional[int] = None,
+) -> Any:
+    order = attributions.argsort()[::-1]
+    selected_attributions = []
+    selected_sources = []
+
+    if top_k is not None:
+        order = order[:top_k]
+
+    for i in order:
+        selected_attributions.append(attributions[i])
+        selected_sources.append(context_partitioner.get_source(i))
+
+    df = pd.DataFrame.from_dict(
+        {"Score": selected_attributions, "Source": selected_sources}
+    )
+    df = _apply_color_scale(df).format(precision=3)
+    return df

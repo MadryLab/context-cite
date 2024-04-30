@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import torch as ch
-from typing import Dict, Any, Optional
+from numpy.typing import NDArray
+from typing import Dict, Any, Optional, List
+import logging
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from .context_partitioner import BaseContextPartitioner, PARTITION_TYPE_TO_PARTITIONER
 from .lasso import LassoRegression
@@ -11,7 +13,7 @@ from .utils import (
     split_into_sentences,
     split_into_words,
     highlight_word_indices,
-    get_formatted_scores_and_sources,
+    get_attributions_df,
 )
 
 
@@ -42,7 +44,10 @@ class ContextCiter:
         self.ablation_keep_prob = ablation_keep_prob
         self.batch_size = batch_size
         self.solver = solver
+
         self._cache = {}
+        self.logger = logging.getLogger("ContextCite")
+        self.logger.setLevel(logging.DEBUG)  # TODO: change to INFO later
 
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -68,7 +73,11 @@ class ContextCiter:
         )
         return cls(model, tokenizer, context, query, partition_type, generate_kwargs)
 
-    def _get_prompt_and_ids(self, mask: Optional[np.ndarray] = None):
+    def _get_prompt_ids(
+        self,
+        mask: Optional[NDArray] = None,
+        return_prompt: bool = False,
+    ):
         context = self.context_partitioner.get_context(mask)
         prompt = f"Context: {context}\n\nQuery: {self.query}"
         messages = [{"role": "user", "content": prompt}]
@@ -76,17 +85,21 @@ class ContextCiter:
             messages, tokenize=False, add_generation_prompt=True
         )
         chat_prompt_ids = self.tokenizer.encode(chat_prompt, add_special_tokens=False)
-        return chat_prompt, chat_prompt_ids
+
+        if return_prompt:
+            return chat_prompt_ids, chat_prompt
+        else:
+            return chat_prompt_ids
 
     @property
     def _response_start(self):
-        _, prompt_ids = self._get_prompt_and_ids()
+        prompt_ids = self._get_prompt_ids()
         return len(prompt_ids)
 
     @property
     def _output(self):
         if self._cache.get("output") is None:
-            prompt, prompt_ids = self._get_prompt_and_ids()
+            prompt_ids, prompt = self._get_prompt_ids(return_prompt=True)
             input_ids = ch.tensor([prompt_ids], device=self.model.device)
             output_ids = self.model.generate(input_ids, **self.generate_kwargs)[0]
             # We take the original prompt because sometimes encoding and decoding changes it
@@ -149,15 +162,12 @@ class ContextCiter:
         return separated_str
 
     @property
-    def num_sources(self):
+    def num_sources(self) -> int:
         return self.context_partitioner.num_sources
 
     @property
-    def sources(self):
+    def sources(self) -> List[str]:
         return self.context_partitioner.sources
-
-    def get_source(self, index):
-        return self.context_partitioner.get_source(index)
 
     def _char_range_to_token_range(self, start_index, end_index):
         output_tokens = self._output_tokens
@@ -179,75 +189,72 @@ class ContextCiter:
         )
         return ids_start_index, ids_end_index
 
-    def _get_masks_and_logit_probs(self):
-        def get_prompt_ids(mask=None):
-            _, prompt_ids = self._get_prompt_and_ids(mask=mask)
-            return prompt_ids
-
-        return get_masks_and_logit_probs(
-            self.model,
-            self.tokenizer,
-            self.num_masks,
-            self.num_sources,
-            get_prompt_ids,
-            self._response_ids,
-            self.ablation_keep_prob,
-            self.batch_size,
+    def _compute_masks_and_logit_probs(self) -> None:
+        self._cache["reg_masks"], self._cache["reg_logit_probs"] = (
+            get_masks_and_logit_probs(
+                self.model,
+                self.tokenizer,
+                self.num_masks,
+                self.num_sources,
+                self._get_prompt_ids,
+                self._response_ids,
+                self.ablation_keep_prob,
+                self.batch_size,
+            )
         )
 
     @property
     def _masks(self):
         if self._cache.get("reg_masks") is None:
-            self._cache["reg_masks"], self._cache["reg_logit_probs"] = (
-                self._get_masks_and_logit_probs()
-            )
+            self._compute_masks_and_logit_probs()
         return self._cache["reg_masks"]
 
     @property
     def _logit_probs(self):
         if self._cache.get("reg_logit_probs") is None:
-            self._cache["reg_masks"], self._cache["reg_logit_probs"] = (
-                self._get_masks_and_logit_probs()
-            )
+            self._compute_masks_and_logit_probs()
         return self._cache["reg_logit_probs"]
 
-    def _get_scores_for_ids_range(
-        self, ids_start_idx, ids_end_idx, return_extras=False
-    ):
-
+    def _get_attributions_for_ids_range(self, ids_start_idx, ids_end_idx) -> tuple:
         outputs = aggregate_logit_probs(self._logit_probs[:, ids_start_idx:ids_end_idx])
         num_output_tokens = ids_end_idx - ids_start_idx
         weight, bias = self.solver.fit(self._masks, outputs, num_output_tokens)
-        extras = {"bias": bias}
-        if return_extras:
-            return weight, extras
-        else:
-            return weight
+        return weight, bias
 
-    def get_attributions(self, start_index=None, end_index=None, return_extras=False):
+    def get_attributions(
+        self,
+        start_idx: Optional[int] = None,
+        end_idx: Optional[int] = None,
+        as_dataframe: bool = False,
+        top_k: Optional[int] = None,
+    ) -> NDArray[Any] | tuple[Any, dict[str, Any]] | Any:
         if self.num_sources == 0:
+            self.logger.warning("No sources to attribute to!")
             return np.array([])
-        ids_start_idx, ids_end_idx = self._indices_to_token_indices(
-            start_index, end_index
-        )
-        selected = self.response[start_index:end_index]
+
+        if not as_dataframe and top_k is not None:
+            self.logger.warning("top_k is ignored when not using dataframes.")
+
+        ids_start_idx, ids_end_idx = self._indices_to_token_indices(start_idx, end_idx)
+        selected = self.response[start_idx:end_idx]
         attributed = self.tokenizer.decode(
             self._response_ids[ids_start_idx:ids_end_idx]
         )
-        assert selected.strip() in attributed.strip()
-        return self._get_scores_for_ids_range(
+        if selected.strip() not in attributed.strip():
+            self.logger.warning(
+                f"Decoded IDs do not match the plain text:\n"
+                f"Selected: {selected.strip()}\n"
+                f"Attributed: {attributed.strip()}"
+            )
+
+        # _bias is the bias term in the l1 regression
+        attributions, _bias = self._get_attributions_for_ids_range(
             ids_start_idx,
             ids_end_idx,
-            return_extras=return_extras,
         )
-
-    def show_attributions(self, start_idx=None, end_idx=None):
-        scores = self.get_attributions(start_index=start_idx, end_index=end_idx)
-        order = scores.argsort()[::-1]
-        selected_scores = []
-        selected_sources = []
-        for i in order:
-            selected_scores.append(scores[i])
-            selected_sources.append(self.get_source(i))
-        df = get_formatted_scores_and_sources(selected_scores, selected_sources)
-        return df
+        if as_dataframe:
+            return get_attributions_df(
+                attributions, self.context_partitioner, top_k=top_k
+            )
+        else:
+            return attributions
