@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 from typing import Dict, Any, Optional, List
 import logging
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .context_partitioner import BaseContextPartitioner, PARTITION_TYPE_TO_PARTITIONER
+from .context_partitioner import BaseContextPartitioner, SOURCE_TYPE_TO_PARTITIONER
 from .lasso import LassoRegression
 from .utils import (
     get_masks_and_logit_probs,
@@ -17,25 +17,27 @@ from .utils import (
 
 
 DEFAULT_GENERATE_KWARGS = {"max_new_tokens": 512, "do_sample": False}
+DEFAULT_PROMPT_TEMPLATE = "Context: {context}\n\nQuery: {query}"
 
 
 class ContextCiter:
     def __init__(
         self,
-        model,
-        tokenizer,
+        model: Any,
+        tokenizer: Any,
         context: str,
         query: str,
-        partition_type: str = "sentence",
+        source_type: str = "sentence",
         generate_kwargs: Optional[Dict[str, Any]] = None,
         num_masks: int = 64,
         ablation_keep_prob: float = 0.5,
         batch_size: int = 1,
         solver: Optional[LassoRegression] = None,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
-        partitioner_cls = PARTITION_TYPE_TO_PARTITIONER[partition_type]
+        partitioner_cls = SOURCE_TYPE_TO_PARTITIONER[source_type]
         self.context_partitioner: BaseContextPartitioner = partitioner_cls(context)
         self.query = query
         self.generate_kwargs = generate_kwargs or DEFAULT_GENERATE_KWARGS
@@ -43,6 +45,7 @@ class ContextCiter:
         self.ablation_keep_prob = ablation_keep_prob
         self.batch_size = batch_size
         self.solver = solver or LassoRegression()
+        self.prompt_template = prompt_template
 
         self._cache = {}
         self.logger = logging.getLogger("ContextCite")
@@ -57,12 +60,11 @@ class ContextCiter:
         pretrained_model_name_or_path,
         context: str,
         query: str,
-        partition_type: str = "sentence",
         device: str = "cuda",
         model_kwargs: Dict[str, Any] = {},
         tokenizer_kwargs: Dict[str, Any] = {},
-        generate_kwargs: Optional[Dict[str, Any]] = None,
-    ):
+        **kwargs: Dict[str, Any],
+    ) -> "ContextCiter":
         model = AutoModelForCausalLM.from_pretrained(
             pretrained_model_name_or_path, **model_kwargs
         )
@@ -70,7 +72,7 @@ class ContextCiter:
         tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path, **tokenizer_kwargs
         )
-        return cls(model, tokenizer, context, query, partition_type, generate_kwargs)
+        return cls(model, tokenizer, context, query, **kwargs)
 
     def _get_prompt_ids(
         self,
@@ -78,7 +80,7 @@ class ContextCiter:
         return_prompt: bool = False,
     ):
         context = self.context_partitioner.get_context(mask)
-        prompt = f"Context: {context}\n\nQuery: {self.query}"
+        prompt = self.prompt_template.format(context=context, query=self.query)
         messages = [{"role": "user", "content": prompt}]
         chat_prompt = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
@@ -247,12 +249,12 @@ class ContextCiter:
             self.logger.warning(
                 f"Decoded selected tokens do not match selected text.\n"
                 f"If the following look close enough, feel free to ignore:\n"
-                f"Selected text: {selected_text.strip()}\n"
-                f"Decoded selected tokens: {decoded_text.strip()}"
+                f"What you selected: {selected_text.strip()}\n"
+                f"What is being attributed: {decoded_text.strip()}"
             )
 
         if verbose:
-            print(f"Attributed: {attributed.strip()}")
+            print(f"Attributed: {decoded_text.strip()}")
 
         # _bias is the bias term in the l1 regression
         attributions, _bias = self._get_attributions_for_ids_range(

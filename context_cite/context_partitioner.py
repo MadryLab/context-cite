@@ -138,7 +138,7 @@ class WordContextPartitioner(BaseContextPartitioner):
             context += word
 
 
-PARTITION_TYPE_TO_PARTITIONER = {
+SOURCE_TYPE_TO_PARTITIONER = {
     "sentence": SentenceContextPartitioner,
     "word": WordContextPartitioner,
 }
