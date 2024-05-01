@@ -10,8 +10,7 @@ from .lasso import LassoRegression
 from .utils import (
     get_masks_and_logit_probs,
     aggregate_logit_probs,
-    split_into_sentences,
-    split_into_words,
+    split_response,
     highlight_word_indices,
     get_attributions_df,
 )
@@ -120,6 +119,9 @@ class ContextCiter:
     def response(self):
         output_tokens = self._output_tokens
         char_response_start = output_tokens.token_to_chars(self._response_start).start
+
+        # TODO: move these to a model-dependent class that we can subclass
+        # when we start supporting more models
         # 32007 is a special token for Phi-3 denoting <|end|>
         # 128009 is a special token for Llama3 denoting <|eot_id|>
         if output_tokens["input_ids"][-1] in (
@@ -146,19 +148,7 @@ class ContextCiter:
             color: bool, whether to color the starting index
         """
         start_indices = []
-        if split_by == "word":
-            parts, separators = split_into_words(self.response)
-        elif split_by == "sentence":
-            parts, separators = split_into_sentences(self.response)
-        else:
-            raise ValueError(f"Invalid split_by: {split_by}")
-
-        cur_start_index = 0
-        for separator, part in zip(separators, parts):
-            cur_start_index += len(separator)
-            start_indices.append(cur_start_index)
-            cur_start_index += len(part)
-
+        parts, separators, start_indices = split_response(self.response, split_by)
         separated_str = highlight_word_indices(parts, start_indices, separators, color)
         return separated_str
 

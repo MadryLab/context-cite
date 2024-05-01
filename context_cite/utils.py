@@ -12,34 +12,35 @@ from transformers import DataCollatorForSeq2Seq
 nltk.download("punkt")
 
 
-def split_into_sentences(text: str) -> Tuple[List[str], List[str]]:
-    """Split text into sentences and return the sentences and separators."""
-    sentences = []
+def split_response(text: str, split_by: str) -> Tuple[List[str], List[str], List[str]]:
+    """Split response into parts and return the parts, start indices, and separators."""
+    parts = []
     separators = []
+    start_indices = []
 
-    # first split by newlines
-    lines = text.splitlines()
-    for line in lines:
-        sentences.extend(nltk.sent_tokenize(line))
+    if split_by == "sentence":
+        # first split by newlines
+        lines = text.splitlines()
+        for line in lines:
+            parts.extend(nltk.sent_tokenize(line))
+    elif split_by == "word":
+        parts = nltk.word_tokenize(text)
+    else:
+        raise ValueError(f"Cannot split response by '{split_by}'")
 
     cur_start = 0
-    for sentence in sentences:
-        cur_end = text.find(sentence, cur_start)
+    for part in parts:
+        cur_end = text.find(part, cur_start)
         separators.append(text[cur_start:cur_end])
-        cur_start = cur_end + len(sentence)
-    return sentences, separators
+        cur_start = cur_end + len(part)
 
-
-def split_into_words(text: str) -> Tuple[List[str], List[str]]:
-    """Split text into words and return the words and separators."""
-    words = nltk.word_tokenize(text)
-    separators = []
     cur_start = 0
-    for word in words:
-        cur_end = text.find(word, cur_start)
-        separators.append(text[cur_start:cur_end])
-        cur_start = cur_end + len(word)
-    return words, separators
+    for separator, part in zip(separators, parts):
+        cur_start += len(separator)
+        start_indices.append(cur_start)
+        cur_start += len(part)
+
+    return parts, separators, start_indices
 
 
 def highlight_word_indices(words, indices, separators, color: bool):
@@ -62,13 +63,13 @@ def highlight_word_indices(words, indices, separators, color: bool):
     return result
 
 
-def create_mask(num_sources, alpha, seed):
+def _create_mask(num_sources, alpha, seed):
     random = np.random.RandomState(seed)
     p = [1 - alpha, alpha]
     return random.choice([False, True], size=num_sources, p=p)
 
 
-def create_regression_dataset(
+def _create_regression_dataset(
     num_masks, num_sources, get_prompt_ids, response_ids, alpha, base_seed=0
 ):
     masks = np.zeros((num_masks, num_sources), dtype=bool)
@@ -78,7 +79,7 @@ def create_regression_dataset(
         "labels": [],
     }
     for seed in range(num_masks):
-        mask = create_mask(num_sources, alpha, seed + base_seed)
+        mask = _create_mask(num_sources, alpha, seed + base_seed)
         masks[seed] = mask
         prompt_ids = get_prompt_ids(mask=mask)
         input_ids = prompt_ids + response_ids
@@ -88,7 +89,7 @@ def create_regression_dataset(
     return masks, Dataset.from_dict(data_dict)
 
 
-def compute_logit_probs(logits, labels):
+def _compute_logit_probs(logits, labels):
     batch_size, seq_length = labels.shape
     # [num_tokens x vocab_size]
     reshaped_logits = logits.reshape(batch_size * seq_length, -1)
@@ -101,7 +102,7 @@ def compute_logit_probs(logits, labels):
     return reshaped_outputs.reshape(batch_size, seq_length)
 
 
-def make_loader(dataset, tokenizer, batch_size):
+def _make_loader(dataset, tokenizer, batch_size):
     collate_fn = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding="longest")
     loader = DataLoader(
         dataset,
@@ -111,8 +112,8 @@ def make_loader(dataset, tokenizer, batch_size):
     return loader
 
 
-def get_response_logit_probs(dataset, model, tokenizer, response_length, batch_size):
-    loader = make_loader(dataset, tokenizer, batch_size)
+def _get_response_logit_probs(dataset, model, tokenizer, response_length, batch_size):
+    loader = _make_loader(dataset, tokenizer, batch_size)
     logit_probs = ch.zeros((len(dataset), response_length), device=model.device)
 
     start_index = 0
@@ -123,7 +124,7 @@ def get_response_logit_probs(dataset, model, tokenizer, response_length, batch_s
         logits = output.logits[:, -(response_length + 1) : -1]
         labels = batch["labels"][:, -response_length:]
         batch_size, _ = labels.shape
-        cur_logit_probs = compute_logit_probs(logits, labels)
+        cur_logit_probs = _compute_logit_probs(logits, labels)
         logit_probs[start_index : start_index + batch_size] = cur_logit_probs
         start_index += batch_size
 
@@ -141,7 +142,7 @@ def get_masks_and_logit_probs(
     batch_size,
     base_seed=0,
 ):
-    masks, dataset = create_regression_dataset(
+    masks, dataset = _create_regression_dataset(
         num_masks,
         num_sources,
         get_prompt_ids,
@@ -149,7 +150,7 @@ def get_masks_and_logit_probs(
         ablation_keep_prob,
         base_seed=base_seed,
     )
-    logit_probs = get_response_logit_probs(
+    logit_probs = _get_response_logit_probs(
         dataset, model, tokenizer, len(response_ids), batch_size
     )
     return masks, logit_probs.astype(np.float32)

@@ -16,10 +16,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["torch", "transformers", "pandas", "scikit-learn"]
+dependencies = ["numpy", "torch", "transformers", "pandas", "nltk", "scikit-learn"]
 
 [project.optional-dependencies]
-optional = ["langchain", "scipy"]
+optional = ["langchain", "beautifulsoup4", "faiss-cpu", "tiktoken", "scipy"]
 test = ["pytest"]
 
 

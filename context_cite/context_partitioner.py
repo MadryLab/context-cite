@@ -1,7 +1,7 @@
+import nltk
 import numpy as np
 from typing import Optional, List
 from abc import ABC, abstractmethod
-from .utils import split_into_sentences, split_into_words
 
 
 class BaseContextPartitioner(ABC):
@@ -12,6 +12,10 @@ class BaseContextPartitioner(ABC):
     @abstractmethod
     def num_sources(self) -> int:
         """The number of sources."""
+
+    @abstractmethod
+    def split_context(self) -> None:
+        """Split the context into sources."""
 
     @abstractmethod
     def get_source(self, index: int) -> str:
@@ -32,20 +36,35 @@ class SentenceContextPartitioner(BaseContextPartitioner):
         super().__init__(context)
         self._cache = {}
 
+    def split_context(self):
+        """Split text into sentences and cache the sentences and separators."""
+        sentences = []
+        separators = []
+
+        # first split by newlines
+        lines = self.context.splitlines()
+        for line in lines:
+            sentences.extend(nltk.sent_tokenize(line))
+
+        cur_start = 0
+        for sentence in sentences:
+            cur_end = self.context.find(sentence, cur_start)
+            separators.append(self.context[cur_start:cur_end])
+            cur_start = cur_end + len(sentence)
+
+        self._cache["sentences"] = sentences
+        self._cache["separators"] = separators
+
     @property
     def sentences(self):
         if self._cache.get("sentences") is None:
-            self._cache["sentences"], self._cache["separators"] = split_into_sentences(
-                self.context
-            )
+            self.split_context()
         return self._cache["sentences"]
 
     @property
     def separators(self):
         if self._cache.get("separators") is None:
-            self._cache["sentences"], self._cache["separators"] = split_into_sentences(
-                self.context
-            )
+            self.split_context()
         return self._cache["separators"]
 
     @property
@@ -73,20 +92,30 @@ class WordContextPartitioner(BaseContextPartitioner):
         super().__init__(context)
         self._cache = {}
 
+    def split_context(self):
+        """Split the context into words and cache the words and separators."""
+        separators = []
+        words = nltk.word_tokenize(self.context)
+
+        cur_start = 0
+        for word in words:
+            cur_end = self.context.find(word, cur_start)
+            separators.append(self.context[cur_start:cur_end])
+            cur_start = cur_end + len(word)
+
+        self._cache["words"] = words
+        self._cache["separators"] = separators
+
     @property
     def words(self) -> List[str]:
         if self._cache.get("words") is None:
-            self._cache["words"], self._cache["separators"] = split_into_words(
-                self.context
-            )
+            self.split_context()
         return self._cache["words"]
 
     @property
     def separators(self) -> List[str]:
         if self._cache.get("separators") is None:
-            self._cache["words"], self._cache["separators"] = split_into_words(
-                self.context
-            )
+            self.split_context()
         return self._cache["separators"]
 
     @property
