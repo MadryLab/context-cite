@@ -218,7 +218,36 @@ class ContextCiter:
         end_idx: Optional[int] = None,
         as_dataframe: bool = False,
         top_k: Optional[int] = None,
-    ) -> NDArray[Any] | tuple[Any, dict[str, Any]] | Any:
+        verbose: bool = True,
+    ) -> NDArray | Any:
+        """
+        Get the attributions for (part of) the response.
+
+        Arguments:
+            start_idx (int, optional):
+                Start index of the part to attribute to. If None, defaults to
+                the start of the response.
+            end_idx (int, optional):
+                End index of the part to attribute to. If None, defaults to the
+                end of the response.
+            as_dataframe (bool, optional):
+                If True, return the attributions as a stylized dataframe in
+                sorted order. Otherwise, return them as a numpy array where
+                the ith element corresponds to the score of the ith source
+                within the context. Defaults to False.
+            top_k (int, optional):
+                Only used if as_dataframe is True. Number of top attributions to
+                return. If None, all attributions are returned. Defaults to None.
+            verbose (bool, optional):
+                If True, print the selected part of the response. Defaults to
+                True.
+
+        Returns:
+            NDArray | Any:
+                If as_dataframe is False, return a numpy array where the ith element
+                corresponds to the score of the ith source within the context.
+                Otherwise, return a stylized dataframe in sorted order.
+        """
         if self.num_sources == 0:
             self.logger.warning("No sources to attribute to!")
             return np.array([])
@@ -237,6 +266,9 @@ class ContextCiter:
                 f"Selected: {selected.strip()}\n"
                 f"Attributed: {attributed.strip()}"
             )
+
+        if verbose:
+            print(f"Attributed: {attributed.strip()}")
 
         # _bias is the bias term in the l1 regression
         attributions, _bias = self._get_attributions_for_ids_range(
