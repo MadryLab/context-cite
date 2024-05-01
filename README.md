@@ -50,8 +50,11 @@ query = "What type of GPUs did the authors use in this paper?"
 cc = ContextCiter.from_pretrained(model_name, context, query)
 ```
 We can check the model's response using
-`cc.response`: `"The authors used eight P100 GPUs in their Transformer architecture for training on the WMT 2014 English-to-German translation task.</s>"`
-
+`cc.response`: 
+```python
+In [1]: cc.response
+Out[1]: 'The authors used eight P100 GPUs in their Transformer architecture for training on the WMT 2014 English-to-German translation task.</s>'
+```
 
 Where did the model get its information? Let's see what the attributions look like!
 ```python
