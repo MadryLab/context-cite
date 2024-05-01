@@ -4,16 +4,16 @@
     <br>
     [<a href="#installation">install</a>]
     [<a href="#getting-started">getting started</a>]
-    [<a href="#blog-post1">blog post #1</a>]
-    [<a href="#blog-post2">blog post #2</a>]
     [<a href="#demo">demo</a>]
-    [<a href="#paper">paper (coming soon!)</a>]
+    [<a href="https://gradientscience.org/contextcite/">blog post #1</a>]
+    [<a href="https://gradientscience.org/contextcite-applications/">blog post #2</a>]
+    [paper coming soon!]
     <!-- [<a href="#citation">Citation</a>] -->
     <br>
-    Maintainers: <a href="https://claude.ai/">Aleksander Madry</a>, <a href="https://claude.ai/">Aleksander Madry</a>, and <a href="https://claude.ai/">Aleksander Madry</a>
+    Maintainers: <a href="https://twitter.com/bcohenwang">Ben Cohen-Wang</a>, <a href="https://twitter.com/harshays_">Harshay Shah</a>, and <a href="https://twitter.com/kris_georgiev1">Kristian Georgiev</a>
 </p>
 
-This repository provides an API for `context-cite`, a tool for attributing LLM responses to sources within their context.
+`context_cite` is a tool for attributing LLM responses to sources within their context.
 
 <p align = 'center'>
   <img alt="Attributing context via ContextCite" src='assets/context_cite.png' width='90%'/>
@@ -23,26 +23,13 @@ This repository provides an API for `context-cite`, a tool for attributing LLM r
 ## Installation
 
 ```bash
-pip install context-cite
-[add requirements stuff + conda setup if needed]
+pip install context_cite
 ```
 
 ## Getting started
-Check out our [blog post](TODO), [gradio demo](TODO), and [quickstart notebook](TODO)! [add a colab notebook link too]
+Check out our [quickstart notebook](https://github.com/MadryLab/context-cite/blob/main/notebooks/example.ipynb) for a quick introduction to `context_cite`!
 
-Using `context-cite` is as simple as:
-
-```python
-from context_cite import ContextCiter
-
-model_name = "<huggingface model name>"
-context = "..."
-query = "<question relating to the context>?"
-
-cc = ContextCiter.from_pretrained(model_name, context, query)
-cc.get_attributions(as_dataframe=True)
-```
-Let's try the following example:
+Using `context_cite` is as simple as:
 
 ```python
 from context_cite import ContextCiter
