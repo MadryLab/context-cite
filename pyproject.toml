@@ -24,7 +24,7 @@ test = ["pytest"]
 
 
 [tool.setuptools.packages.find]
-exclude = ["notebooks*"]
+exclude = ["notebooks*", "assets*", "tests*"]
 
 [project.urls]
 Homepage = "https://github.com/MadryLab/context_cite"
