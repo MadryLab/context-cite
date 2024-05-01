@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from typing import Any
 from context_cite import ContextCiter
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -9,7 +10,7 @@ MODEL_NAMES = [
 ]
 
 
-def get_model(model_name: str) -> tuple[AutoModelForCausalLM, AutoTokenizer]:
+def get_model(model_name: str) -> tuple[Any, Any]:
     model = AutoModelForCausalLM.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return model, tokenizer
