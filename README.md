@@ -1,12 +1,34 @@
-![ContextCite Logo](assets/logo.png)
+## ContextCite: Attributing Model Generation to Context
+<p align='center'>
+    <img alt="ContextCite" src='assets/logo.png' width='75%'/>
+    <br>
+    [<a href="#install">install</a>]
+    [<a href="#getting-started">getting started</a>]
+    [<a href="#blog-post1">blog post #1</a>]
+    [<a href="#blog-post2">blog post #2</a>]
+    [<a href="#demo">demo</a>]
+    [<a href="#paper">paper (coming soon!)</a>]
+    <!-- [<a href="#citation">Citation</a>] -->
+    <br>
+    Maintainers: <a href="https://claude.ai/">Aleksander Madry</a>, <a href="https://claude.ai/">Aleksander Madry</a>, and <a href="https://claude.ai/">Aleksander Madry</a>
+</p>
 
-# Attribute LLM responses to sources within their context.
-`ContextCite` is a tool for attributing LLM responses to sources within their context.
+This repository provides an API for `contextcite`, a tool for attributing LLM responses to sources within their context.
 
-TODO: Link to blog & demo, twitter handles, say paper is coming soon
+<p align = 'center'>
+  <img alt="Attributing context via ContextCite" src='assets/contextcite.png' width='90%'/>
+</p>
 
-## Get started
-Check out our [blog post](TODO), [gradio demo](TODO), and [quickstart notebook](TODO)!
+
+## Installation
+
+```bash
+pip install context_cite
+[add requirements stuff + conda setup if needed]
+```
+
+## Getting started
+Check out our [blog post](TODO), [gradio demo](TODO), and [quickstart notebook](TODO)! [add a colab notebook link too]
 
 Using `context_cite` is as simple as:
 
@@ -42,11 +64,4 @@ Hmm, that's oddly specific---let's see what the attributions look like.
 cc.get_attributions(as_dataframe=True, top_k=3)
 ```
 ![Example Usage](assets/readme_example.png)
-
-
-## Installation
-
-```bash
-pip install context_cite
-```
 
