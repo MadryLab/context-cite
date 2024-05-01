@@ -1,5 +1,6 @@
 import nltk
 import numpy as np
+from numpy.typing import NDArray
 from typing import Optional, List
 from abc import ABC, abstractmethod
 
@@ -22,7 +23,7 @@ class BaseContextPartitioner(ABC):
         """Get a represention of the source corresponding to a given index."""
 
     @abstractmethod
-    def get_context(self, mask: Optional[np.ndarray] = None):
+    def get_context(self, mask: Optional[NDArray] = None):
         """Get a version of the context ablated according to the given mask."""
 
     @property
@@ -74,7 +75,7 @@ class SentenceContextPartitioner(BaseContextPartitioner):
     def get_source(self, index: int) -> str:
         return self.sentences[index]
 
-    def get_context(self, mask: Optional[np.ndarray] = None):
+    def get_context(self, mask: Optional[NDArray] = None):
         if mask is None:
             mask = np.ones(self.num_sources, dtype=bool)
         separators = np.array(self.separators)[mask]
@@ -125,7 +126,7 @@ class WordContextPartitioner(BaseContextPartitioner):
     def get_source(self, index: int) -> str:
         return self.words[index]
 
-    def get_context(self, mask: Optional[np.ndarray] = None):
+    def get_context(self, mask: Optional[NDArray] = None):
         if mask is None:
             mask = np.ones(self.num_sources, dtype=bool)
         separators = np.array(self.separators)[mask]

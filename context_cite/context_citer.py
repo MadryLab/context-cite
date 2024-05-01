@@ -31,7 +31,7 @@ class ContextCiter:
         num_masks: int = 64,
         ablation_keep_prob: float = 0.5,
         batch_size: int = 1,
-        solver: LassoRegression = LassoRegression(lasso_alpha=0.01),
+        solver: Optional[LassoRegression] = None,
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -42,7 +42,7 @@ class ContextCiter:
         self.num_masks = num_masks
         self.ablation_keep_prob = ablation_keep_prob
         self.batch_size = batch_size
-        self.solver = solver
+        self.solver = solver or LassoRegression()
 
         self._cache = {}
         self.logger = logging.getLogger("ContextCite")
@@ -119,22 +119,7 @@ class ContextCiter:
     def response(self):
         output_tokens = self._output_tokens
         char_response_start = output_tokens.token_to_chars(self._response_start).start
-
-        # TODO: move these to a model-dependent class that we can subclass
-        # when we start supporting more models
-        # 32007 is a special token for Phi-3 denoting <|end|>
-        # 128009 is a special token for Llama3 denoting <|eot_id|>
-        if output_tokens["input_ids"][-1] in (
-            self.tokenizer.eos_token_id,
-            32007,
-            128009,
-        ):
-            eos_start = output_tokens.token_to_chars(
-                len(output_tokens["input_ids"]) - 1
-            ).start
-            return self._output[char_response_start:eos_start]
-        else:
-            return self._output[char_response_start:]
+        return self._output[char_response_start:]
 
     @property
     def response_with_indices(self, split_by="word", color=True) -> [str, pd.DataFrame]:
@@ -172,13 +157,12 @@ class ContextCiter:
         if start_index is None or end_index is None:
             start_index = 0
             end_index = len(self.response)
-        assert 0 <= start_index
-        assert start_index < end_index
-        assert end_index <= len(self.response)
-        ids_start_index, ids_end_index = self._char_range_to_token_range(
-            start_index, end_index
-        )
-        return ids_start_index, ids_end_index
+        if not (0 <= start_index < end_index <= len(self.response)):
+            raise ValueError(
+                f"Invalid selection range ({start_index}, {end_index}). "
+                f"Please select any range within (0, {len(self.response)})."
+            )
+        return self._char_range_to_token_range(start_index, end_index)
 
     def _compute_masks_and_logit_probs(self) -> None:
         self._cache["reg_masks"], self._cache["reg_logit_probs"] = (
@@ -256,15 +240,15 @@ class ContextCiter:
             self.logger.warning("top_k is ignored when not using dataframes.")
 
         ids_start_idx, ids_end_idx = self._indices_to_token_indices(start_idx, end_idx)
-        selected = self.response[start_idx:end_idx]
-        attributed = self.tokenizer.decode(
-            self._response_ids[ids_start_idx:ids_end_idx]
-        )
-        if selected.strip() not in attributed.strip():
+        selected_text = self.response[start_idx:end_idx]
+        selected_tokens = self._response_ids[ids_start_idx:ids_end_idx]
+        decoded_text = self.tokenizer.decode(selected_tokens)
+        if selected_text.strip() not in decoded_text.strip():
             self.logger.warning(
-                f"Decoded IDs do not match the plain text:\n"
-                f"Selected: {selected.strip()}\n"
-                f"Attributed: {attributed.strip()}"
+                f"Decoded selected tokens do not match selected text.\n"
+                f"If the following look close enough, feel free to ignore:\n"
+                f"Selected text: {selected_text.strip()}\n"
+                f"Decoded selected tokens: {decoded_text.strip()}"
             )
 
         if verbose:
