@@ -213,3 +213,12 @@ def get_attributions_df(
     )
     df = _apply_color_scale(df).format(precision=3)
     return df
+
+
+# The Llama 3 char_to_token is buggy (start and end chars for a given token 
+# are often the same), so we implement our own
+def char_to_token(output_tokens, char_index):
+    for i in range(len(output_tokens["input_ids"]) - 1):
+        if char_index < output_tokens.token_to_chars(i + 1).start:
+            return i
+    return i + 1

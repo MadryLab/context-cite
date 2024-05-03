@@ -13,6 +13,7 @@ from .utils import (
     split_response,
     highlight_word_indices,
     get_attributions_df,
+    char_to_token,
 )
 
 
@@ -151,8 +152,8 @@ class ContextCiter:
         output_tokens = self._output_tokens
         response_start = self._response_start
         offset = output_tokens.token_to_chars(response_start).start
-        ids_start_index = output_tokens.char_to_token(start_index + offset)
-        ids_end_index = output_tokens.char_to_token(end_index + offset - 1) + 1
+        ids_start_index = char_to_token(output_tokens, start_index + offset)
+        ids_end_index = char_to_token(output_tokens, end_index + offset - 1) + 1
         return ids_start_index - response_start, ids_end_index - response_start
 
     def _indices_to_token_indices(self, start_index=None, end_index=None):
