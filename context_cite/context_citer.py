@@ -5,12 +5,12 @@ from numpy.typing import NDArray
 from typing import Dict, Any, Optional, List
 import logging
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .context_partitioner import BaseContextPartitioner, SOURCE_TYPE_TO_PARTITIONER
+from .context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
 from .lasso import LassoRegression
 from .utils import (
     get_masks_and_logit_probs,
     aggregate_logit_probs,
-    split_response,
+    split_text,
     highlight_word_indices,
     get_attributions_df,
     char_to_token,
@@ -35,11 +35,18 @@ class ContextCiter:
         batch_size: int = 1,
         solver: Optional[LassoRegression] = None,
         prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+        partitioner: Optional[BaseContextPartitioner] = None,
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
-        partitioner_cls = SOURCE_TYPE_TO_PARTITIONER[source_type]
-        self.context_partitioner: BaseContextPartitioner = partitioner_cls(context)
+        if partitioner is None:
+            self.partitioner = SimpleContextPartitioner(
+                context, source_type=source_type
+            )
+        else:
+            self.partitioner = partitioner
+            if self.partitioner.context != context:
+                raise ValueError("Partitioner context does not match provided context.")
         self.query = query
         self.generate_kwargs = generate_kwargs or DEFAULT_GENERATE_KWARGS
         self.num_masks = num_masks
@@ -80,7 +87,7 @@ class ContextCiter:
         mask: Optional[NDArray] = None,
         return_prompt: bool = False,
     ):
-        context = self.context_partitioner.get_context(mask)
+        context = self.partitioner.get_context(mask)
         prompt = self.prompt_template.format(context=context, query=self.query)
         messages = [{"role": "user", "content": prompt}]
         chat_prompt = self.tokenizer.apply_chat_template(
@@ -136,17 +143,17 @@ class ContextCiter:
             color: bool, whether to color the starting index
         """
         start_indices = []
-        parts, separators, start_indices = split_response(self.response, split_by)
+        parts, separators, start_indices = split_text(self.response, split_by)
         separated_str = highlight_word_indices(parts, start_indices, separators, color)
         return separated_str
 
     @property
     def num_sources(self) -> int:
-        return self.context_partitioner.num_sources
+        return self.partitioner.num_sources
 
     @property
     def sources(self) -> List[str]:
-        return self.context_partitioner.sources
+        return self.partitioner.sources
 
     def _char_range_to_token_range(self, start_index, end_index):
         output_tokens = self._output_tokens
@@ -263,8 +270,6 @@ class ContextCiter:
             ids_end_idx,
         )
         if as_dataframe:
-            return get_attributions_df(
-                attributions, self.context_partitioner, top_k=top_k
-            )
+            return get_attributions_df(attributions, self.partitioner, top_k=top_k)
         else:
             return attributions

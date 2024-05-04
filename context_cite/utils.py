@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import torch as ch
 from numpy.typing import NDArray
+from spacy.lang.en import English
 from tqdm.auto import tqdm
 from typing import Any, List, Optional, Tuple
 from datasets import Dataset
@@ -12,33 +13,28 @@ from transformers import DataCollatorForSeq2Seq
 nltk.download("punkt")
 
 
-def split_response(text: str, split_by: str) -> Tuple[List[str], List[str], List[str]]:
+def split_text(text: str, split_by: str) -> Tuple[List[str], List[str], List[str]]:
     """Split response into parts and return the parts, start indices, and separators."""
     parts = []
     separators = []
     start_indices = []
 
-    if split_by == "sentence":
-        # first split by newlines
-        lines = text.splitlines()
-        for line in lines:
+    for line in text.splitlines():
+        if split_by == "sentence":
             parts.extend(nltk.sent_tokenize(line))
-    elif split_by == "word":
-        parts = nltk.word_tokenize(text)
-    else:
-        raise ValueError(f"Cannot split response by '{split_by}'")
+        elif split_by == "word":
+            tokenizer = English().tokenizer
+            parts = [token.text for token in tokenizer(text)]
+        else:
+            raise ValueError(f"Cannot split response by '{split_by}'")
 
     cur_start = 0
     for part in parts:
         cur_end = text.find(part, cur_start)
-        separators.append(text[cur_start:cur_end])
+        separator = text[cur_start:cur_end]
+        separators.append(separator)
+        start_indices.append(cur_end)
         cur_start = cur_end + len(part)
-
-    cur_start = 0
-    for separator, part in zip(separators, parts):
-        cur_start += len(separator)
-        start_indices.append(cur_start)
-        cur_start += len(part)
 
     return parts, separators, start_indices
 
@@ -48,7 +44,6 @@ def highlight_word_indices(words, indices, separators, color: bool):
 
     # ANSI escape code for red color
     if color:
-        # RED = "\033[91m"
         RED = "\033[36m"  # ANSI escape code for light gray
         RESET = "\033[0m"  # Reset color to default
     else:
@@ -215,7 +210,7 @@ def get_attributions_df(
     return df
 
 
-# The Llama 3 char_to_token is buggy (start and end chars for a given token 
+# The Llama 3 char_to_token is buggy (start and end chars for a given token
 # are often the same), so we implement our own
 def char_to_token(output_tokens, char_index):
     for i in range(len(output_tokens["input_ids"]) - 1):

@@ -1,8 +1,8 @@
-import nltk
 import numpy as np
 from numpy.typing import NDArray
 from typing import Optional, List
 from abc import ABC, abstractmethod
+from .utils import split_text
 
 
 class BaseContextPartitioner(ABC):
@@ -32,35 +32,23 @@ class BaseContextPartitioner(ABC):
         return [self.get_source(i) for i in range(self.num_sources)]
 
 
-class SentenceContextPartitioner(BaseContextPartitioner):
-    def __init__(self, context: str) -> None:
+class SimpleContextPartitioner(BaseContextPartitioner):
+    def __init__(self, context: str, source_type: str = "sentence") -> None:
         super().__init__(context)
+        self.source_type = source_type
         self._cache = {}
 
     def split_context(self):
-        """Split text into sentences and cache the sentences and separators."""
-        sentences = []
-        separators = []
-
-        # first split by newlines
-        lines = self.context.splitlines()
-        for line in lines:
-            sentences.extend(nltk.sent_tokenize(line))
-
-        cur_start = 0
-        for sentence in sentences:
-            cur_end = self.context.find(sentence, cur_start)
-            separators.append(self.context[cur_start:cur_end])
-            cur_start = cur_end + len(sentence)
-
-        self._cache["sentences"] = sentences
+        """Split text into parts and cache the parts and separators."""
+        parts, separators, _ = split_text(self.context, self.source_type)
+        self._cache["parts"] = parts
         self._cache["separators"] = separators
 
     @property
-    def sentences(self):
-        if self._cache.get("sentences") is None:
+    def parts(self):
+        if self._cache.get("parts") is None:
             self.split_context()
-        return self._cache["sentences"]
+        return self._cache["parts"]
 
     @property
     def separators(self):
@@ -70,75 +58,19 @@ class SentenceContextPartitioner(BaseContextPartitioner):
 
     @property
     def num_sources(self) -> int:
-        return len(self.sentences)
+        return len(self.parts)
 
     def get_source(self, index: int) -> str:
-        return self.sentences[index]
+        return self.parts[index]
 
     def get_context(self, mask: Optional[NDArray] = None):
         if mask is None:
             mask = np.ones(self.num_sources, dtype=bool)
         separators = np.array(self.separators)[mask]
-        sentences = np.array(self.sentences)[mask]
+        parts = np.array(self.parts)[mask]
         context = ""
-        for i, (separator, sentence) in enumerate(zip(separators, sentences)):
+        for i, (separator, part) in enumerate(zip(separators, parts)):
             if i > 0:
                 context += separator
-            context += sentence
+            context += part
         return context
-
-
-class WordContextPartitioner(BaseContextPartitioner):
-    def __init__(self, context: str) -> None:
-        super().__init__(context)
-        self._cache = {}
-
-    def split_context(self):
-        """Split the context into words and cache the words and separators."""
-        separators = []
-        words = nltk.word_tokenize(self.context)
-
-        cur_start = 0
-        for word in words:
-            cur_end = self.context.find(word, cur_start)
-            separators.append(self.context[cur_start:cur_end])
-            cur_start = cur_end + len(word)
-
-        self._cache["words"] = words
-        self._cache["separators"] = separators
-
-    @property
-    def words(self) -> List[str]:
-        if self._cache.get("words") is None:
-            self.split_context()
-        return self._cache["words"]
-
-    @property
-    def separators(self) -> List[str]:
-        if self._cache.get("separators") is None:
-            self.split_context()
-        return self._cache["separators"]
-
-    @property
-    def num_sources(self) -> int:
-        return len(self.words)
-
-    def get_source(self, index: int) -> str:
-        return self.words[index]
-
-    def get_context(self, mask: Optional[NDArray] = None):
-        if mask is None:
-            mask = np.ones(self.num_sources, dtype=bool)
-        separators = np.array(self.separators)[mask]
-        words = np.array(self.words)[mask]
-        context = ""
-        for i, (separator, word) in enumerate(zip(separators, words)):
-            if i > 0:
-                context += separator
-            context += word
-
-
-SOURCE_TYPE_TO_PARTITIONER = {
-    "sentence": SentenceContextPartitioner,
-    "word": WordContextPartitioner,
-}
