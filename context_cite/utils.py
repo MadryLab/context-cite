@@ -187,7 +187,7 @@ def _apply_color_scale(df):
     # logit-probability to drop by np.log(10), which (roughly) corresponds to
     # a decrease in probability of 10x.
     max_val = max([df["Score"].max(), np.log(10)])
-    return df.style.map(lambda val: _color_scale(val, max_val), subset=["Score"])
+    return df.style.applymap(lambda val: _color_scale(val, max_val), subset=["Score"])
 
 
 def get_attributions_df(
