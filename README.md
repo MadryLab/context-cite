@@ -27,7 +27,9 @@ pip install context_cite
 ```
 
 ## Getting started
-Check out our [quickstart notebook](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb) for a quick introduction to `context_cite`!
+Check out our example notebooks (you can open them in Google colab):
+- [🤗 quickstart](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb): a quick introduction to `context_cite`!
+- [🦜⛓️ RAG example](https://github.com/MadryLab/context-cite/blob/main/notebooks/rag_langchain_example.ipynb): chaining `context_cite` within a simple `langchain` RAG setup (note: `context_cite` needs access to logprobs)
 
 Using `context_cite` is as simple as:
 
