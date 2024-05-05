@@ -183,7 +183,10 @@ def _color_scale(val, max_val):
 
 
 def _apply_color_scale(df):
-    max_val = max([df["Score"].max(), 1])
+    # A score of np.log(10) means that the ablating this sources causes the
+    # logit-probability to drop by np.log(10), which (roughly) corresponds to
+    # a decrease in probability of 10x.
+    max_val = max([df["Score"].max(), np.log(10)])
     return df.style.map(lambda val: _color_scale(val, max_val), subset=["Score"])
 
 

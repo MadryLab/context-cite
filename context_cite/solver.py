@@ -1,15 +1,27 @@
 import numpy as np
 from numpy.typing import NDArray
+from typing import Tuple
+from abc import ABC, abstractmethod
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Lasso
 from sklearn.pipeline import make_pipeline
 
 
-class LassoRegression:
+class BaseSolver(ABC):
+    @abstractmethod
+    def fit(
+        self, masks: NDArray, outputs: NDArray, num_output_tokens: int
+    ) -> Tuple[NDArray, NDArray]:
+        ...
+
+
+class LassoRegression(BaseSolver):
     def __init__(self, lasso_alpha: float = 0.01) -> None:
         self.lasso_alpha = lasso_alpha
 
-    def fit(self, masks: NDArray, outputs: NDArray, num_output_tokens: int) -> tuple:
+    def fit(
+        self, masks: NDArray, outputs: NDArray, num_output_tokens: int
+    ) -> Tuple[NDArray, NDArray]:
         X = masks.astype(np.float32)
         Y = outputs / num_output_tokens
         scaler = StandardScaler()
