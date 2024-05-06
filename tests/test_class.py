@@ -9,12 +9,14 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 MODEL_NAMES = [
     "mistralai/Mistral-7B-Instruct-v0.2",
     "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "microsoft/Phi-3-mini-128k-instruct",
 ]
 
 
 def get_model(model_name: str) -> tuple[Any, Any]:
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # trust_remote_code=True is necessary for the Phi-3 model
+    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     return model, tokenizer
 
 
@@ -94,7 +96,13 @@ def test_class_init(model_name: str) -> None:
 def test_class_init_from_pretrained(model_name: str) -> None:
     context, query = get_context_and_query()
 
-    cc = ContextCiter.from_pretrained(model_name, context, query)
+    cc = ContextCiter.from_pretrained(
+        model_name,
+        context,
+        query,
+        model_kwargs={"trust_remote_code": True},
+        tokenizer_kwargs={"trust_remote_code": True},
+    )
     assert isinstance(cc, ContextCiter)
 
 
@@ -102,7 +110,14 @@ def test_class_init_from_pretrained(model_name: str) -> None:
 def test_class_init_from_pretrained_cpu(model_name: str) -> None:
     context, query = get_context_and_query()
 
-    cc = ContextCiter.from_pretrained(model_name, context, query, device="cpu")
+    cc = ContextCiter.from_pretrained(
+        model_name,
+        context,
+        query,
+        device="cpu",
+        model_kwargs={"trust_remote_code": True},
+        tokenizer_kwargs={"trust_remote_code": True},
+    )
     assert isinstance(cc, ContextCiter)
 
 
@@ -147,7 +162,14 @@ def test_generate_on_cpu(model_name: str) -> None:
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
 def test_generate_on_cpu_from_pretrained(model_name: str) -> None:
     context, query = get_context_and_query()
-    cc = ContextCiter.from_pretrained(model_name, context, query, device="cpu")
+    cc = ContextCiter.from_pretrained(
+        model_name,
+        context,
+        query,
+        device="cpu",
+        model_kwargs={"trust_remote_code": True},
+        tokenizer_kwargs={"trust_remote_code": True},
+    )
 
     R = cc.response
     print(R)
@@ -163,12 +185,19 @@ def test_generate_same_without_contextcite(model_name: str) -> None:
 
     context, query = get_context_and_query()
 
-    cc = ContextCiter.from_pretrained(model_name, context, query, device="cpu")
+    cc = ContextCiter.from_pretrained(
+        model_name,
+        context,
+        query,
+        device="cpu",
+        model_kwargs={"trust_remote_code": True},
+        tokenizer_kwargs={"trust_remote_code": True},
+    )
 
     contextcite_response = cc.response
 
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
     prompt = DEFAULT_PROMPT_TEMPLATE.format(context=context, query=query)
     messages = [{"role": "user", "content": prompt}]
@@ -237,6 +266,44 @@ def test_attribute_partial(model_name: str) -> None:
     model.cuda()
     context, query = get_context_and_query()
     cc = ContextCiter(model, tokenizer, context, query, num_ablations=16)
+    R = cc.response
+
+    start_idx = np.random.randint(0, len(R) - 1)
+    end_idx = np.random.randint(start_idx + 1, len(R))
+    scores = cc.get_attributions(start_idx, end_idx)
+
+    assert isinstance(scores, np.ndarray)
+
+
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_attribute_word(model_name: str) -> None:
+    model, tokenizer = get_model(model_name)
+    model.eval()
+    model.cuda()
+    context, query = get_context_and_query()
+    cc = ContextCiter(
+        model, tokenizer, context, query, num_ablations=16, source_type="word"
+    )
+    R = cc.response
+
+    start_idx = np.random.randint(0, len(R) - 1)
+    end_idx = np.random.randint(start_idx + 1, len(R))
+    scores = cc.get_attributions(start_idx, end_idx)
+
+    assert isinstance(scores, np.ndarray)
+
+
+@pytest.mark.parametrize("model_name", MODEL_NAMES)
+def test_attribute_word_from_pretrained(model_name: str) -> None:
+    context, query = get_context_and_query()
+    cc = ContextCiter.from_pretrained(
+        model_name,
+        context,
+        query,
+        source_type="word",
+        model_kwargs={"trust_remote_code": True},
+        tokenizer_kwargs={"trust_remote_code": True},
+    )
     R = cc.response
 
     start_idx = np.random.randint(0, len(R) - 1)
