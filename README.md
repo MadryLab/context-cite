@@ -7,6 +7,7 @@
     [<a href="https://huggingface.co/spaces/contextcite/context-cite">🤗 demo</a>]
     [<a href="https://gradientscience.org/contextcite/">blog post #1</a>]
     [<a href="https://gradientscience.org/contextcite-applications/">blog post #2</a>]
+    [<a href="https://twitter.com/aleks_madry/status/1787564287986389277">tweet</a>]
     [paper coming soon!]
     <!-- [<a href="#citation">Citation</a>] -->
     <br>
