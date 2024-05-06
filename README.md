@@ -43,7 +43,7 @@ Attention mechanisms have become an integral part of compelling sequence modelin
 In this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.
 """
 query = "What type of GPUs did the authors use in this paper?"
-cc = ContextCiter.from_pretrained(model_name, context, query)
+cc = ContextCiter.from_pretrained(model_name, context, query, device="cuda")
 ```
 We can check the model's response using
 `cc.response`:
