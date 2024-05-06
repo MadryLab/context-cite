@@ -3,7 +3,7 @@
     <img alt="ContextCite" src='assets/logo.png' width='75%'/>
     <br>
     [<a href="#getting-started">getting started</a>]
-    [<a href="#getting-started">notebooks</a>]
+    [<a href="#example-notebooks">example notebooks</a>]
     [<a href="https://huggingface.co/spaces/contextcite/context-cite">demo</a>]
     [<a href="https://gradientscience.org/contextcite/">blog post #1</a>]
     [<a href="https://gradientscience.org/contextcite-applications/">blog post #2</a>]
@@ -77,7 +77,7 @@ Out[3]:
 
 
 
-## Notebooks 
+## Example notebooks 
 
 Try out `context_cite` using our example notebooks (you can open them in Google colab):
 - [🤗 quickstart](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb): a quick introduction to `context_cite`!
