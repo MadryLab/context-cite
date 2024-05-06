@@ -2,7 +2,6 @@
 <p align='center'>
     <img alt="ContextCite" src='assets/logo.png' width='75%'/>
     <br>
-    [<a href="#installation">install</a>]
     [<a href="#getting-started">getting started</a>]
     [<a href="#getting-started">notebooks</a>]
     [<a href="https://huggingface.co/spaces/contextcite/context-cite">demo</a>]
@@ -20,14 +19,12 @@
   <img alt="Attributing context via ContextCite" src='assets/context_cite.gif' width='75%'/>
 </p>
 
-
-## Installation
-
+## Getting started
+Install `context_cite` via `pip`
 ```bash
 pip install context_cite
 ```
 
-## Getting started
 Using `context_cite` is as simple as:
 
 ```python
