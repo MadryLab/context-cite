@@ -4,6 +4,7 @@
     <br>
     [<a href="#installation">install</a>]
     [<a href="#getting-started">getting started</a>]
+    [<a href="#getting-started">notebooks</a>]
     [<a href="https://huggingface.co/spaces/contextcite/context-cite">demo</a>]
     [<a href="https://gradientscience.org/contextcite/">blog post #1</a>]
     [<a href="https://gradientscience.org/contextcite-applications/">blog post #2</a>]
@@ -27,10 +28,6 @@ pip install context_cite
 ```
 
 ## Getting started
-Check out our example notebooks (you can open them in Google colab):
-- [🤗 quickstart](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb): a quick introduction to `context_cite`!
-- [🦜⛓️ RAG example](https://github.com/MadryLab/context-cite/blob/main/notebooks/rag_langchain_example.ipynb): chaining `context_cite` within a simple `langchain` RAG setup (note: `context_cite` needs access to logprobs)
-
 Using `context_cite` is as simple as:
 
 ```python
@@ -63,7 +60,11 @@ Where did the model get its information? Let's see what the attributions look li
 In [2]: cc.get_attributions(as_dataframe=True, top_k=5)
 Out[2]:
 ```
-![Basic example](assets/basic_example.png)
+
+<p align = 'center'>
+  <img alt="Basic ContextCite example" src='assets/basic_example.png' width='90%'/>
+</p>
+
 
 Finally, let's try to attribute a *specific part* of the response. To do so, we specify a `start_idx` and `end_idx` corresponding to the range of the response that we would like to attribute.
 In this case, we'll specify indices to attribute the phrase `"the WMT 2014 English-to-German translation task"` from the response.
@@ -72,4 +73,16 @@ In this case, we'll specify indices to attribute the phrase `"the WMT 2014 Engli
 In [3]: cc.get_attributions(start_idx=83, end_idx=129, as_dataframe=True, top_k=5)
 Out[3]:
 ```
-![Selection example](assets/selection_example.png)
+
+<p align = 'center'>
+  <img alt="ContextCite attributions" src='assets/selection_example.png' width='90%'/>
+</p>
+
+
+
+## Notebooks 
+
+Try out `context_cite` using our example notebooks (you can open them in Google colab):
+- [🤗 quickstart](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb): a quick introduction to `context_cite`!
+- [🦜⛓️ RAG example](https://github.com/MadryLab/context-cite/blob/main/notebooks/rag_langchain_example.ipynb): chaining `context_cite` within a simple `langchain` RAG setup.
+
