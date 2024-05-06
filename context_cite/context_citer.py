@@ -44,7 +44,7 @@ class ContextCiter:
 
         Arguments:
             model (Any):
-                The model to apply ContextCite to (a HuggingFace 
+                The model to apply ContextCite to (a HuggingFace
                 ModelForCausalLM).
             tokenizer (Any):
                 The tokenizer associated with the provided model.
@@ -56,25 +56,25 @@ class ContextCiter:
                 The type of source to partition the context into. Defaults to
                 "sentence", can also be "word".
             generate_kwargs (Optional[Dict[str, Any]], optional):
-                Additional keyword arguments to pass to the model's generate 
+                Additional keyword arguments to pass to the model's generate
                 method.
             num_ablations (int, optional):
-                The number of ablations used to train the surrogate model. 
+                The number of ablations used to train the surrogate model.
                 Defaults to 64.
             ablation_keep_prob (float, optional):
                 The probability of keeping a source when ablating the context.
                 Defaults to 0.5.
             batch_size (int, optional):
-                The batch size used when performing inference using ablated 
+                The batch size used when performing inference using ablated
                 contexts. Defaults to 1.
             solver (Optional[Solver], optional):
                 The solver to use to compute the linear surrogate model. Lasso
                 regression is used by default.
             prompt_template (str, optional):
-                A template string used to create the prompt from the context 
+                A template string used to create the prompt from the context
                 and query.
             partitioner (Optional[BaseContextPartitioner], optional):
-                A custom partitioner to split the context into sources. This 
+                A custom partitioner to split the context into sources. This
                 will override "source_type" if specified.
         """
 
