@@ -8,14 +8,33 @@ from sklearn.pipeline import make_pipeline
 
 
 class BaseSolver(ABC):
+    """
+    A base solver class.
+
+    Methods:
+        fit(self, masks: NDArray, outputs: NDArray, num_output_tokens: int) -> Tuple[NDArray, NDArray]:
+            Fit the solver to the given data.
+    """
+
     @abstractmethod
     def fit(
         self, masks: NDArray, outputs: NDArray, num_output_tokens: int
-    ) -> Tuple[NDArray, NDArray]:
-        ...
+    ) -> Tuple[NDArray, NDArray]: ...
 
 
 class LassoRegression(BaseSolver):
+    """
+    A LASSO solver using the scikit-learn library.
+
+    Attributes:
+        lasso_alpha (float):
+            The alpha parameter for the LASSO regression. Defaults to 0.01.
+
+    Methods:
+        fit(self, masks: NDArray, outputs: NDArray, num_output_tokens: int) -> Tuple[NDArray, NDArray]:
+            Fit the solver to the given data.
+    """
+
     def __init__(self, lasso_alpha: float = 0.01) -> None:
         self.lasso_alpha = lasso_alpha
 

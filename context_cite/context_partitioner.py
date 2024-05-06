@@ -6,6 +6,26 @@ from .utils import split_text
 
 
 class BaseContextPartitioner(ABC):
+    """
+    A base class for partitioning a context into sources.
+
+    Attributes:
+        context (str):
+            The context to partition.
+
+    Methods:
+        num_sources(self) -> int:
+            Property. The number of sources within the context.
+        split_context(self) -> None:
+            Split the context into sources.
+        get_source(self, index: int) -> str:
+            Get a represention of the source corresponding to a given index.
+        get_context(self, mask: Optional[NDArray] = None) -> str:
+            Get a version of the context ablated according to the given mask.
+        sources(self) -> List[str]:
+            Property. A list of all sources within the context.
+    """
+
     def __init__(self, context: str) -> None:
         self.context = context
 
@@ -33,6 +53,11 @@ class BaseContextPartitioner(ABC):
 
 
 class SimpleContextPartitioner(BaseContextPartitioner):
+    """
+    A simple context partitioner that splits the context into sources based on
+    a separator.
+    """
+
     def __init__(self, context: str, source_type: str = "sentence") -> None:
         super().__init__(context)
         self.source_type = source_type
