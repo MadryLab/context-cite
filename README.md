@@ -80,6 +80,19 @@ Out[3]:
 ## Example notebooks 
 
 Try out `context_cite` using our example notebooks (you can open them in Google colab):
-- [🤗 quickstart](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb): a quick introduction to `context_cite`!
-- [🦜⛓️ RAG example](https://github.com/MadryLab/context-cite/blob/main/notebooks/rag_langchain_example.ipynb): chaining `context_cite` within a simple `langchain` RAG setup.
+- [🤗 quickstart](https://github.com/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb): a quick introduction to `context_cite` <a target="_blank" href="https://colab.research.google.com/github/MadryLab/context-cite/blob/main/notebooks/quickstart_example.ipynb"><img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/> </a> 
+- [🦜⛓️ RAG example](https://github.com/MadryLab/context-cite/blob/main/notebooks/rag_langchain_example.ipynb): chaining `context_cite` within a simple `langchain` RAG setup <a target="_blank" href="https://colab.research.google.com/github/MadryLab/context-cite/blob/main/notebooks/rag_langchain_example.ipynb">
+  <img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
 
+## Citation
+```bib
+@misc{cohenwang2024contextcite,
+  author = {Benjamin Cohen-Wang, Harshay Shah, Kristian Georgiev, Aleksander Madry},
+  title = {ContextCite: Attributing Model Generation to Context},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/MadryLab/context-cite/tree/main}},
+}
+```
