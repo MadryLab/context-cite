@@ -4,7 +4,7 @@
     <br>
     [<a href="#getting-started">getting started</a>]
     [<a href="#example-notebooks">example notebooks</a>]
-    [<a href="https://huggingface.co/spaces/contextcite/context-cite">demo</a>]
+    [<a href="https://huggingface.co/spaces/contextcite/context-cite">🤗 demo</a>]
     [<a href="https://gradientscience.org/contextcite/">blog post #1</a>]
     [<a href="https://gradientscience.org/contextcite-applications/">blog post #2</a>]
     [paper coming soon!]
