@@ -206,12 +206,14 @@ def test_generate_same_without_contextcite(model_name: str) -> None:
     )
     chat_prompt_ids = tokenizer.encode(chat_prompt, add_special_tokens=False)
     input_ids = ch.tensor([chat_prompt_ids], device=model.device)
-
-    llm_response = model.generate(input_ids, **DEFAULT_GENERATE_KWARGS)
-    llm_response = tokenizer.decode(llm_response[0])
+    output_ids = model.generate(input_ids, **DEFAULT_GENERATE_KWARGS)[0]
+    raw_output = tokenizer.decode(output_ids)
     prompt_length = len(tokenizer.decode(chat_prompt_ids))
-
-    assert contextcite_response == llm_response[prompt_length:]
+    output = chat_prompt + raw_output[prompt_length:]
+    output_tokens = tokenizer(output, add_special_tokens=False)
+    response_start = len(chat_prompt_ids)
+    char_response_start = output_tokens.token_to_chars(response_start).start
+    assert contextcite_response == output[char_response_start:]
 
 
 @pytest.mark.parametrize("model_name", MODEL_NAMES)
