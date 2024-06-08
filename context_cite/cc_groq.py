@@ -4,6 +4,7 @@ import pandas as pd
 import torch as ch
 import os   
 from numpy.typing import NDArray
+from functools import partial
 from typing import Any, Optional, List, Dict, Union
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from context_cite.context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
@@ -25,7 +26,7 @@ from torch.utils.data import DataLoader
 from transformers import DataCollatorForSeq2Seq
 from groq import Groq
 from openai import OpenAI
-
+from multiprocessing import Pool
 
 from dotenv import load_dotenv
 
@@ -34,10 +35,18 @@ load_dotenv()
 DEFAULT_GENERATE_KWARGS = {"max_new_tokens": 512, "do_sample": False}
 DEFAULT_PROMPT_TEMPLATE = "Context: {context}\n\nQuery: {query}"
 
-def _create_mask(num_sources, alpha, seed):
+def _create_mask(size, alpha, seed):
     random = np.random.RandomState(seed)
     p = [1 - alpha, alpha]
-    return random.choice([False, True], size=num_sources, p=p)
+    if isinstance(size, int):
+        size = (size,)
+    return random.choice([False, True], size=size, p=p)
+
+def parallel_call_groq(seed, masks, call_groq, get_ablated_context, query):
+    mask = masks[seed]
+    ablated_context = get_ablated_context(mask=mask)
+    response = call_groq(context=ablated_context, query=query)
+    return response
 
 def get_masks_and_logit_probs(
     model,
@@ -329,17 +338,31 @@ class GroqContextCiter:
         num_sources = self.num_sources
         alpha = self.ablation_keep_prob
         base_seed = 0
-        masks = np.zeros((num_masks, num_sources), dtype=bool)
+        # masks = np.zeros((num_masks, num_sources), dtype=bool)
         cosine_sims = np.zeros(self.num_ablations)
         embed_responses = np.zeros((num_masks, self.embedding_dim))
         responses = []
 
-        for seed in tqdm(range(num_masks)):
-            mask = _create_mask(num_sources, alpha, seed + base_seed)
-            masks[seed] = mask
-            ablated_context = self._get_ablated_context(mask=mask)
-            response = self._call_groq(context=ablated_context, query=self.query)
-            responses.append(response)
+        masks = _create_mask(size=(num_masks, num_sources), alpha=alpha, seed=base_seed)
+
+        # masks = ch.tensor([_create_mask(num_sources, alpha, seed + base_seed) for seed in tqdm(range(num_masks))], dtype=ch.bool)
+
+        _parallel_call_groq = partial(
+            parallel_call_groq,
+            masks=masks,
+            call_groq=self._call_groq,
+            get_ablated_context=self._get_ablated_context,
+            query=self.query
+        )
+        with Pool(2) as p:
+            responses = p.map(_parallel_call_groq, range(num_masks))
+        
+        # for seed in tqdm(range(num_masks)):
+        #     mask = _create_mask(num_sources, alpha, seed + base_seed)
+        #     masks[seed] = mask
+        #     ablated_context = self._get_ablated_context(mask=mask)
+        #     response = self._call_groq(context=ablated_context, query=self.query)
+        #     responses.append(response)
 
         embed_responses = self._get_embedding(responses)        
         cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
