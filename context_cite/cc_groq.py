@@ -360,7 +360,7 @@ class GroqContextCiter:
     def _get_attributions_for_ids_range(self, start_idx, end_idx) -> tuple:
         masks, outputs = self._cosine_sim(start_idx, end_idx) # (num_ablations,)
         # num_output_tokens = end_idx - start_idx
-        weight, bias = self.solver.fit(masks, outputs)
+        weight, bias = self.solver.fit_cv(masks, outputs, alphas = [0.1, 0.01, 0.001, 0.0001])
         return weight, bias
     
     def get_attributions(self, 
@@ -385,7 +385,7 @@ In this work we propose the Transformer, a model architecture eschewing recurren
 """
 query = "What type of GPUs did the authors use in this paper?"
 
-cc = GroqContextCiter(groq_model='llama3-8b-8192', context=context, query=query, num_ablations=32)
+cc = GroqContextCiter(groq_model='llama3-8b-8192', context=context, query=query, num_ablations=128)
 # %%
 cc.response
 # %%
