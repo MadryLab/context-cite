@@ -27,7 +27,7 @@ from transformers import DataCollatorForSeq2Seq
 from groq import Groq
 from openai import OpenAI
 from multiprocessing import Pool
-
+from joblib import Parallel, delayed
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -46,6 +46,19 @@ def parallel_call_groq(seed, masks, call_groq, get_ablated_context, query):
     mask = masks[seed]
     ablated_context = get_ablated_context(mask=mask)
     response = call_groq(context=ablated_context, query=query)
+    return response
+
+def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, context, query, partitioner, groq_model, prompt_template):
+    mask = _create_mask(num_sources, alpha, seed + base_seed)
+    ablated_context = partitioner.get_context(mask)
+    prompt = prompt_template.format(context=ablated_context, query=query)
+    messages = [{"role": "user", "content": prompt}]
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    chat_completion = groq_client.chat.completions.create(
+        messages=messages,
+        model=groq_model,
+    )
+    response = chat_completion.choices[0].message.content
     return response
 
 def get_masks_and_logit_probs(
@@ -347,22 +360,12 @@ class GroqContextCiter:
 
         # masks = ch.tensor([_create_mask(num_sources, alpha, seed + base_seed) for seed in tqdm(range(num_masks))], dtype=ch.bool)
 
-        _parallel_call_groq = partial(
-            parallel_call_groq,
-            masks=masks,
-            call_groq=self._call_groq,
-            get_ablated_context=self._get_ablated_context,
-            query=self.query
-        )
-        with Pool(2) as p:
-            responses = p.map(_parallel_call_groq, range(num_masks))
-        
-        # for seed in tqdm(range(num_masks)):
-        #     mask = _create_mask(num_sources, alpha, seed + base_seed)
-        #     masks[seed] = mask
-        #     ablated_context = self._get_ablated_context(mask=mask)
-        #     response = self._call_groq(context=ablated_context, query=self.query)
-        #     responses.append(response)
+        args = [
+            (seed, num_sources, alpha, base_seed, self.context, self.query, self.partitioner, self.groq_model, self.prompt_template)
+            for seed in range(num_masks)
+        ]
+
+        responses = Parallel(n_jobs=-1)(delayed(_parallel_call_groq_joblib)(*arg) for arg in tqdm(args))
 
         embed_responses = self._get_embedding(responses)        
         cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
