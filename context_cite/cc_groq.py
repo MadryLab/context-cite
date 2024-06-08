@@ -42,12 +42,6 @@ def _create_mask(size, alpha, seed):
         size = (size,)
     return random.choice([False, True], size=size, p=p)
 
-def parallel_call_groq(seed, masks, call_groq, get_ablated_context, query):
-    mask = masks[seed]
-    ablated_context = get_ablated_context(mask=mask)
-    response = call_groq(context=ablated_context, query=query)
-    return response
-
 def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, context, query, partitioner, groq_model, prompt_template):
     mask = _create_mask(num_sources, alpha, seed + base_seed)
     ablated_context = partitioner.get_context(mask)
@@ -206,20 +200,6 @@ class GroqContextCiter:
                 A custom partitioner to split the context into sources. This
                 will override "source_type" if specified.
         """
-        # super().__init__(
-        #     model='',
-        #     tokenizer='',
-        #     context=context,
-        #     query=query,
-        #     source_type=source_type,
-        #     generate_kwargs=generate_kwargs,
-        #     num_ablations=num_ablations,
-        #     ablation_keep_prob=ablation_keep_prob,
-        #     batch_size=batch_size,
-        #     solver=solver,
-        #     prompt_template=prompt_template,
-        #     partitioner=partitioner,
-        # )
 
         if partitioner is None:
             self.partitioner = SimpleContextPartitioner(
