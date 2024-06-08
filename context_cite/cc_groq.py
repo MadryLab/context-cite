@@ -43,17 +43,21 @@ def _create_mask(size, alpha, seed):
     return random.choice([False, True], size=size, p=p)
 
 def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, context, query, partitioner, groq_model, prompt_template):
-    mask = _create_mask(num_sources, alpha, seed + base_seed)
-    ablated_context = partitioner.get_context(mask)
-    prompt = prompt_template.format(context=ablated_context, query=query)
-    messages = [{"role": "user", "content": prompt}]
-    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    chat_completion = groq_client.chat.completions.create(
-        messages=messages,
-        model=groq_model,
-    )
-    response = chat_completion.choices[0].message.content
-    return response
+    try:
+        mask = _create_mask(num_sources, alpha, seed + base_seed)
+        ablated_context = partitioner.get_context(mask)
+        prompt = prompt_template.format(context=ablated_context, query=query)
+        messages = [{"role": "user", "content": prompt}]
+        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        chat_completion = groq_client.chat.completions.create(
+            messages=messages,
+            model=groq_model,
+        )
+        response = chat_completion.choices[0].message.content
+        return response
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        return None
 
 def get_masks_and_logit_probs(
     model,
@@ -346,7 +350,9 @@ class GroqContextCiter:
         ]
 
         responses = Parallel(n_jobs=-1)(delayed(_parallel_call_groq_joblib)(*arg) for arg in tqdm(args))
-
+        valid_indices = [i for i, response in enumerate(responses) if response is not None]
+        responses = [responses[i] for i in valid_indices]
+        masks = masks[valid_indices]
         embed_responses = self._get_embedding(responses)        
         cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
         return masks, cosine_sims
@@ -379,7 +385,7 @@ In this work we propose the Transformer, a model architecture eschewing recurren
 """
 query = "What type of GPUs did the authors use in this paper?"
 
-cc = GroqContextCiter(groq_model='llama3-8b-8192', context=context, query=query)
+cc = GroqContextCiter(groq_model='llama3-8b-8192', context=context, query=query, num_ablations=32)
 # %%
 cc.response
 # %%
