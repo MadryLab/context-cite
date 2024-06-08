@@ -123,7 +123,7 @@ def _get_response_logit_probs(dataset, model, tokenizer, response_length, batch_
         logit_probs[start_index : start_index + batch_size] = cur_logit_probs
         start_index += batch_size
 
-    return logit_probs.cpu().numpy()
+    return logit_probs.cpu().numpy() # [num_masks x response_length]
 
 
 def get_masks_and_logit_probs(

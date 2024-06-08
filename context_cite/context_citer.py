@@ -155,13 +155,13 @@ class ContextCiter:
         mask: Optional[NDArray] = None,
         return_prompt: bool = False,
     ):
-        context = self.partitioner.get_context(mask)
-        prompt = self.prompt_template.format(context=context, query=self.query)
+        context = self.partitioner.get_context(mask) #string
+        prompt = self.prompt_template.format(context=context, query=self.query) #string
         messages = [{"role": "user", "content": prompt}]
         chat_prompt = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
-        )
-        chat_prompt_ids = self.tokenizer.encode(chat_prompt, add_special_tokens=False)
+        ) #string
+        chat_prompt_ids = self.tokenizer.encode(chat_prompt, add_special_tokens=False) #vector
 
         if return_prompt:
             return chat_prompt_ids, chat_prompt
@@ -178,9 +178,9 @@ class ContextCiter:
         if self._cache.get("output") is None:
             prompt_ids, prompt = self._get_prompt_ids(return_prompt=True)
             input_ids = ch.tensor([prompt_ids], device=self.model.device)
-            output_ids = self.model.generate(input_ids, **self.generate_kwargs)[0]
+            output_ids = self.model.generate(input_ids, **self.generate_kwargs)[0] #vector
             # We take the original prompt because sometimes encoding and decoding changes it
-            raw_output = self.tokenizer.decode(output_ids)
+            raw_output = self.tokenizer.decode(output_ids) #string
             prompt_length = len(self.tokenizer.decode(prompt_ids))
             self._cache["output"] = prompt + raw_output[prompt_length:]
         return self._cache["output"]
