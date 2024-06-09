@@ -1,4 +1,4 @@
-from context_citer import ContextCiter
+# from context_citer import ContextCiter
 import numpy as np
 import pandas as pd
 import torch as ch
@@ -6,7 +6,7 @@ import os
 from numpy.typing import NDArray
 from functools import partial
 from typing import Any, Optional, List, Dict, Union
-from transformers import AutoTokenizer, AutoModelForCausalLM
+# from transformers import AutoTokenizer, AutoModelForCausalLM
 from context_cite.context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
 from context_cite.solver import BaseSolver, LassoRegression, CosineSimLassoRegression
 from context_cite.utils import (
@@ -23,13 +23,14 @@ from spacy.lang.en import English
 from tqdm.auto import tqdm
 from datasets import Dataset
 from torch.utils.data import DataLoader
-from transformers import DataCollatorForSeq2Seq
+# from transformers import DataCollatorForSeq2Seq
 from groq import Groq
 from openai import OpenAI
 from multiprocessing import Pool
 from joblib import Parallel, delayed
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
+import cohere
 
 load_dotenv()
 
@@ -121,14 +122,14 @@ def _compute_logit_probs(logits, labels):
     return reshaped_outputs.reshape(batch_size, seq_length)
 
 
-def _make_loader(dataset, tokenizer, batch_size):
-    collate_fn = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding="longest")
-    loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        collate_fn=collate_fn,
-    )
-    return loader
+# def _make_loader(dataset, tokenizer, batch_size):
+#     # collate_fn = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding="longest")
+#     loader = DataLoader(
+#         dataset,
+#         batch_size=batch_size,
+#         collate_fn=collate_fn,
+#     )
+#     return loader
 
 
 def _get_response_logit_probs(dataset, model, tokenizer, response_length, batch_size):
@@ -235,6 +236,10 @@ class GroqContextCiter:
 
         self.groq_client = Groq(
             api_key=os.getenv("GROQ_API_KEY"),
+        )
+        
+        self.cohere_client = cohere.Client(
+            os.getenv("COHERE_API_KEY")
         )
 
         self.embedding_dim = int(os.getenv("OPENAI_EMBEDDING_DIM"))
@@ -354,7 +359,17 @@ class GroqContextCiter:
         valid_indices = [i for i, response in enumerate(responses) if response is not None]
         responses = [responses[i] for i in valid_indices]
         masks = masks[valid_indices]
-        embed_responses = self._get_embedding(responses)        
+        parts = np.array(self.partitioner.parts)
+        context_source_lists = [list(parts[mask]) for mask in masks]
+        for i, source in enumerate(context_source_lists):
+            response = self.cohere_client.rerank(
+                model="rerank-english-v3.0",
+                query=self.query,
+                documents=source,
+                # top_n=3,
+            )
+            response
+        embed_responses = self._get_embedding(responses)
         cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
         # Save masks and cosine similarities to files
         self._visualize(masks, cosine_sims)
@@ -407,7 +422,7 @@ if __name__ == "__main__":
     """
     query = "What type of GPUs did the authors use in this paper?"
 
-    cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=query, num_ablations=128)
+    cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=query, num_ablations=32)
     # %%
     cc.response
     # %%

@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 from typing import Any, List, Optional, Tuple
 from datasets import Dataset
 from torch.utils.data import DataLoader
-from transformers import DataCollatorForSeq2Seq
+# from transformers import DataCollatorForSeq2Seq
 
 nltk.download("punkt")
 
