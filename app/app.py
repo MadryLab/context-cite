@@ -28,6 +28,11 @@ cohere_client = cohere.Client(api_key=COHERE_API_KEY)
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+# Set the title of the Streamlit app
+st.title("Hypophosphatasia Q&A with Citations")
+
+# Set the subtitle of the Streamlit app
+st.subheader("To know which context sentences contributed to a given answer, use \\cite `your_sentence_here`.")
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -61,7 +66,6 @@ def perform_rag(query):
         top_k=5
     )
 
-    print(search_results)
     # Extract the most relevant contexts
     relevant_contexts = [match['metadata']['text'] for match in search_results['matches']]
 
