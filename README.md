@@ -1,4 +1,4 @@
-Fast Causal Attributions for Rare Disease Q&A Using Groq
+# Fast Causal Attributions for Rare Disease Q&A Using Groq
 
 ## Project Goal
 
