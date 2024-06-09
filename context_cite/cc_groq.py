@@ -29,6 +29,7 @@ from openai import OpenAI
 from multiprocessing import Pool
 from joblib import Parallel, delayed
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
 
 load_dotenv()
 
@@ -356,9 +357,26 @@ class GroqContextCiter:
         embed_responses = self._get_embedding(responses)        
         cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
         # Save masks and cosine similarities to files
-        np.save("masks.npy", masks)
-        np.save("cosine_sims.npy", cosine_sims)
+        self._visualize(masks, cosine_sims)
         return masks, cosine_sims
+
+    def _visualize(self, masks, cosine_sims):
+        data = {
+            'context': [self.partitioner.get_context(mask) for mask in masks],
+            'cosine_similarities': cosine_sims,
+            'masks': masks[:, -1] #last sentence has the answer
+        }
+        df = pd.DataFrame(data)
+        df = df.sort_values(by='cosine_similarities', ascending=False)
+
+        # Plot scatterplot of cosine similarities with masks label to color
+        plt.figure(figsize=(10, 6))
+        scatter = plt.scatter(df['cosine_similarities'], range(len(df)), c=df['masks'], cmap='viridis', label=df['masks'])
+        plt.colorbar(scatter, label='Masks')
+        plt.xlabel('Cosine Similarities')
+        plt.ylabel('Index')
+        plt.title('Scatterplot of Cosine Similarities with Masks Label to Color')
+        plt.show()
 
     def _get_attributions_for_ids_range(self, start_idx, end_idx) -> tuple:
         masks, outputs = self._cosine_sim(start_idx, end_idx) # (num_ablations,)
@@ -389,7 +407,7 @@ if __name__ == "__main__":
     """
     query = "What type of GPUs did the authors use in this paper?"
 
-    cc = GroqContextCiter(groq_model='llama3-8b-8192', context=context, query=query, num_ablations=128)
+    cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=query, num_ablations=128)
     # %%
     cc.response
     # %%
