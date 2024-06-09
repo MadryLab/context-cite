@@ -41,18 +41,18 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index("stanfordrdhack") #index generated from other hackathon project for simplicity
 
 def perform_rag(query):
-    query_embedding = _get_embedding(query)
+    # query_embedding = _get_embedding(query)
     # Perform a similarity search in the Pinecone index
-    search_results = index.query(vector=query_embedding, namespace='hpp', include_values=True,
-    include_metadata=True, top_k=5)
+    # search_results = index.query(vector=query_embedding, namespace='hpp', include_values=True,
+    # include_metadata=True, top_k=5)
 
-    print(search_results)
+    # print(search_results)
     # Extract the most relevant contexts
-    relevant_contexts = [match['metadata']['text'] for match in search_results['matches']]
+    # relevant_contexts = [match['metadata']['text'] for match in search_results['matches']]
 
     # Combine the relevant contexts
-    combined_context = " ".join(relevant_contexts)
-
+    # combined_context = " ".join(relevant_contexts)
+    combined_context = "Hypophosphatasia is a rare, inherited metabolic disorder that affects the development of bones and teeth. It is caused by mutations in the ALPL gene, which encodes an enzyme called alkaline phosphatase. People with hypophosphatasia have low levels of alkaline phosphatase, which leads to abnormal mineralization of bones and teeth. The severity of the condition can vary widely, from mild forms that only affect the teeth to severe forms that can be life-threatening. Treatment for hypophosphatasia is focused on managing symptoms and preventing complications. This may include medications to increase alkaline phosphatase levels, physical therapy, and surgery to correct bone deformities."
     return combined_context
 
 if "response" not in st.session_state:
