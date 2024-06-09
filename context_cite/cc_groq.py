@@ -13,7 +13,7 @@ from context_cite.utils import (
 import logging
 from tqdm.auto import tqdm
 from joblib import Parallel, delayed
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 DEFAULT_GENERATE_KWARGS = {"max_new_tokens": 512, "do_sample": False}
 DEFAULT_PROMPT_TEMPLATE = "Context: {context}\n\nQuery: {query}"
@@ -259,24 +259,6 @@ class GroqContextCiter:
         # Save masks and cosine similarities to files
         # self._visualize(masks, outputs)
         return masks, outputs
-
-    def _visualize(self, masks, cosine_sims):
-        data = {
-            'context': [self.partitioner.get_context(mask) for mask in masks],
-            'cosine_similarities': cosine_sims,
-            'masks': masks[:, -1] #last sentence has the answer
-        }
-        df = pd.DataFrame(data)
-        df = df.sort_values(by='cosine_similarities', ascending=False)
-
-        # Plot scatterplot of cosine similarities with masks label to color
-        plt.figure(figsize=(10, 6))
-        scatter = plt.scatter(df['cosine_similarities'], range(len(df)), c=df['masks'], cmap='viridis', label=df['masks'])
-        plt.colorbar(scatter, label='Masks')
-        plt.xlabel('Cosine Similarities')
-        plt.ylabel('Index')
-        plt.title('Scatterplot of Cosine Similarities with Masks Label to Color')
-        plt.show()
 
     def _get_attributions_for_ids_range(self, sentence) -> tuple:
         masks, outputs = self.causal_reranking(sentence) # (num_ablations,)
