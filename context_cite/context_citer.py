@@ -5,9 +5,9 @@ from numpy.typing import NDArray
 from typing import Dict, Any, Optional, List
 import logging
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
-from .solver import BaseSolver, LassoRegression
-from .utils import (
+from context_cite.context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
+from context_cite.solver import BaseSolver, LassoRegression
+from context_cite.utils import (
     get_masks_and_logit_probs,
     aggregate_logit_probs,
     split_text,
@@ -299,9 +299,9 @@ class ContextCiter:
         return self._cache["reg_logit_probs"]
 
     def _get_attributions_for_ids_range(self, ids_start_idx, ids_end_idx) -> tuple:
-        outputs = aggregate_logit_probs(self._logit_probs[:, ids_start_idx:ids_end_idx])
+        outputs = aggregate_logit_probs(self._logit_probs[:, ids_start_idx:ids_end_idx]) # (num_ablations,)
         num_output_tokens = ids_end_idx - ids_start_idx
-        weight, bias = self.solver.fit(self._masks, outputs, num_output_tokens)
+        weight, bias = self.solver.fit(self._masks, outputs, num_output_tokens) 
         return weight, bias
 
     def get_attributions(
