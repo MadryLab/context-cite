@@ -1,32 +1,20 @@
-# from context_citer import ContextCiter
 import numpy as np
 import pandas as pd
 import torch as ch
 import os   
 from numpy.typing import NDArray
-from functools import partial
 from typing import Any, Optional, List, Dict, Union
-# from transformers import AutoTokenizer, AutoModelForCausalLM
 from context_cite.context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
 from context_cite.solver import BaseSolver, LassoRegression, CosineSimLassoRegression
 from context_cite.utils import (
-    # get_masks_and_logit_probs,
-    # aggregate_logit_probs,
     split_text,
     highlight_word_indices,
     get_attributions_df,
-    char_to_token,
 )
 import logging
-# import nltk
-from spacy.lang.en import English
 from tqdm.auto import tqdm
-from datasets import Dataset
-from torch.utils.data import DataLoader
-# from transformers import DataCollatorForSeq2Seq
 from groq import Groq
 from openai import OpenAI
-from multiprocessing import Pool
 from joblib import Parallel, delayed
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
