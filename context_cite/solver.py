@@ -88,7 +88,7 @@ class CosineSimLassoRegression(BaseSolver):
         X = masks.astype(np.float32)
         Y = outputs
         scaler = StandardScaler()
-        lasso = LassoCV(alphas=alphas, random_state=0, fit_intercept=True)
+        lasso = LassoCV(alphas=alphas, random_state=0, fit_intercept=False)
         # Pipeline is ((X - scaler.mean_) / scaler.scale_) @ lasso.coef_.T + lasso.intercept_
         pipeline = make_pipeline(scaler, lasso)
         pipeline.fit(X, Y)
@@ -96,5 +96,6 @@ class CosineSimLassoRegression(BaseSolver):
 
         # Rescale back to original scale
         weight = lasso.coef_ / scaler.scale_
-        bias = lasso.intercept_ - (scaler.mean_ / scaler.scale_) @ lasso.coef_.T
+        # bias = lasso.intercept_ - (scaler.mean_ / scaler.scale_) @ lasso.coef_.T
+        bias = 0
         return weight, bias
