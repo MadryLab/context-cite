@@ -10,7 +10,6 @@ tqdm
 groq
 openai
 cohere
-dotenv
+# dotenv
 context-cite
 pinecone
-nltk
