@@ -367,7 +367,7 @@ class GroqContextCiter:
                 model="rerank-english-v3.0",
                 query=self.query,
                 documents=source,
-                # top_n=3,
+                top_n=1,
             )
             top_relevance_score = response.results[0].relevance_score
             outputs.append(top_relevance_score)
