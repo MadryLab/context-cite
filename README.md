@@ -35,3 +35,7 @@ To set up the environment for this project, you need to install the required dep
 Once you have installed the required dependencies, you can run the Streamlit app located in `app/app.py`. Use the following command to start the app:
 
 If you can't get it running, focus on app/app.py and context_cite/cc_groq.py.
+
+## 3. Set up environment
+
+Unfortunately, we cannot get it running in time. 
