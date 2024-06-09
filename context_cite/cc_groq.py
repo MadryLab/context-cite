@@ -242,17 +242,12 @@ class GroqContextCiter:
         return chat_completion.choices[0].message.content
 
     # @property
-    def _cosine_sim(self, start_idx, end_idx):
-        selected_response = self.response[start_idx:end_idx]
-        embed_selected_response = self._get_embedding(selected_response)
-
+    def causal_reranking(self, selected_response):
+        # selected_response = self.response[start_idx:end_idx]
         num_masks = self.num_ablations
         num_sources = self.num_sources
         alpha = self.ablation_keep_prob
         base_seed = 0
-        # masks = np.zeros((num_masks, num_sources), dtype=bool)
-        cosine_sims = np.zeros(self.num_ablations)
-        embed_responses = np.zeros((num_masks, self.embedding_dim))
         responses = []
 
         masks = _create_mask(size=(num_masks, num_sources), alpha=alpha, seed=base_seed)
@@ -272,6 +267,9 @@ class GroqContextCiter:
         context_source_lists = [list(parts[mask]) for mask in masks]
         outputs = []
         for i, source in enumerate(context_source_lists):
+            if not source:
+                outputs.append(0)
+                continue
             response = self.cohere_client.rerank(
                 model="rerank-english-v3.0",
                 query=self.query,
@@ -285,7 +283,7 @@ class GroqContextCiter:
         # embed_responses = self._get_embedding(responses)
         # cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
         # Save masks and cosine similarities to files
-        self._visualize(masks, outputs)
+        # self._visualize(masks, outputs)
         return masks, outputs
 
     def _visualize(self, masks, cosine_sims):
@@ -306,16 +304,16 @@ class GroqContextCiter:
         plt.title('Scatterplot of Cosine Similarities with Masks Label to Color')
         plt.show()
 
-    def _get_attributions_for_ids_range(self, start_idx, end_idx) -> tuple:
-        masks, outputs = self._cosine_sim(start_idx, end_idx) # (num_ablations,)
+    def _get_attributions_for_ids_range(self, sentence) -> tuple:
+        masks, outputs = self.causal_reranking(sentence) # (num_ablations,)
         # num_output_tokens = end_idx - start_idx
         weight, bias = self.solver.fit_cv(masks, outputs, alphas = [0.001, 0.0001, 0.00001])
         return weight, bias
     
-    def get_attributions(self, 
+    def get_attributions(self, sentence,
                         as_dataframe: bool = False,
                         top_k: Optional[int] = None,) -> NDArray:
-        attributions, _bias = self._get_attributions_for_ids_range(0, len(self.response))
+        attributions, _bias = self._get_attributions_for_ids_range(sentence)
         if as_dataframe:
             return get_attributions_df(attributions, self.partitioner, top_k=top_k)
         else:
