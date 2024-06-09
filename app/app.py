@@ -73,40 +73,17 @@ def perform_rag(query):
 # Accept user input
 if prompt := st.chat_input("Ask a question about hypophosphatasia:"):
     # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    user_query_message = {"role": "user", "content": prompt}
+    st.session_state.messages.append(user_query_message)
     # Display user message in chat message container
     with st.chat_message("user"):
         st.markdown(prompt)
-    # Define the context
-    context = perform_rag(prompt)
-    # Add the context from the chat messages including roles
-    chat_history_context = " ".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
-    context = f"{chat_history_context} {context}"
-
-    # Initialize the GroqContextCiter
-    cc = GroqContextCiter(
-        groq_model='llama3-70b-8192',
-        context=context,
-        query=prompt,
-        groq_client=groq_client,
-        openai_client=openai_client,
-        cohere_client=cohere_client,
-        num_ablations=8
-    )
-    st.session_state.cc = cc
-    # Get the response from the model
-    response = cc.response
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
 
     if prompt.startswith("\\cite") and st.session_state.cc is not None:
         # Assuming 'results' is already defined as per the instructions
         cc = st.session_state.cc
         sentence = prompt.split("\\cite")[1].strip()
-        answer_sentences = sent_tokenize(response)
+        answer_sentences = sent_tokenize(cc.response)
         # Fuzzily find the closest sentence in answer_sentences
         closest_sentence = get_close_matches(sentence, answer_sentences, n=1, cutoff=0.0)
         
@@ -120,3 +97,27 @@ if prompt := st.chat_input("Ask a question about hypophosphatasia:"):
         attr_df = attr_df[attr_df['Score'] != 0]
         with st.chat_message("assistant"):
             st.write(attr_df)
+    else:
+        # Define the context
+        context = perform_rag(prompt)
+
+        # Initialize the GroqContextCiter
+        cc = GroqContextCiter(
+            groq_model='llama3-70b-8192',
+            context=context,
+            query=prompt,
+            groq_client=groq_client,
+            openai_client=openai_client,
+            cohere_client=cohere_client,
+            num_ablations=8
+        )
+        st.session_state.cc = cc
+        response = cc.response
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
+            st.markdown(response)
+        cc.messages.append(user_query_message)
+        # Add assistant response to chat history
+        assistant_message = {"role": "assistant", "content": response}
+        st.session_state.messages.append(assistant_message)
+        cc.messages.append(assistant_message)

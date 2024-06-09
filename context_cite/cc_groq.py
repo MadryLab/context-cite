@@ -28,12 +28,12 @@ def _create_mask(size, alpha, seed):
         size = (size,)
     return random.choice([False, True], size=size, p=p)
 
-def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, query, partitioner, groq_model, prompt_template):
+def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, query, partitioner, groq_model, prompt_template, prev_messages):
     try:
         mask = _create_mask(num_sources, alpha, seed + base_seed)
         ablated_context = partitioner.get_context(mask)
         prompt = prompt_template.format(context=ablated_context, query=query)
-        messages = [{"role": "user", "content": prompt}]
+        messages = prev_messages + [{"role": "user", "content": prompt}]
         groq_client = Groq(
             api_key=GROQ_API_KEY
         )
@@ -132,6 +132,7 @@ class GroqContextCiter:
         self.openai_client = openai_client
         self.embedding_dim = 256 #hardcoded to match our vector db for hpp
 
+        self.messages = []
     @property
     def response_with_indices(self, split_by="word", color=True) -> [str, pd.DataFrame]:
         """
@@ -182,20 +183,6 @@ class GroqContextCiter:
     def response(self) -> str:
         return self._call_groq(context=self.context, query=self.query)
 
-    def _compute_masks_and_logit_probs(self) -> None:
-        self._cache["reg_masks"], self._cache["reg_logit_probs"] = (
-            get_masks_and_logit_probs(
-                self.model,
-                self.tokenizer,
-                self.num_ablations,
-                self.num_sources,
-                self._get_prompt_ids,
-                self._response_ids,
-                self.ablation_keep_prob,
-                self.batch_size,
-            )
-        )
-
     def _get_embedding(self, text: Union[str, List[str]]) -> ch.Tensor:
         if isinstance(text, str):
             text = [text]
@@ -213,7 +200,7 @@ class GroqContextCiter:
     
     def _call_groq(self, context, query):
         prompt = self.prompt_template.format(context=context, query=query)
-        messages = [{"role": "user", "content": prompt}] 
+        messages = self.messages + [{"role": "user", "content": prompt}]
         chat_completion = self.groq_client.chat.completions.create(
             messages=messages,
             model=self.groq_model,
@@ -234,7 +221,7 @@ class GroqContextCiter:
         # masks = ch.tensor([_create_mask(num_sources, alpha, seed + base_seed) for seed in tqdm(range(num_masks))], dtype=ch.bool)
 
         args = [
-            (seed, num_sources, alpha, base_seed, self.query, self.partitioner, self.groq_model, self.prompt_template)
+            (seed, num_sources, alpha, base_seed, self.query, self.partitioner, self.groq_model, self.prompt_template, self.messages)
             for seed in range(num_masks)
         ]
 
@@ -259,13 +246,9 @@ class GroqContextCiter:
             outputs.append(top_relevance_score)
 
         outputs = ch.tensor(outputs, dtype=ch.float32)
-        # embed_responses = self._get_embedding(responses)
-        # cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
-        # Save masks and cosine similarities to files
-        # self._visualize(masks, outputs)
         return masks, outputs
 
-    def _get_attributions_for_ids_range(self, sentence) -> tuple:
+    def _get_attributions_for_sent(self, sentence) -> tuple:
         masks, outputs = self.causal_reranking(sentence) # (num_ablations,)
         # num_output_tokens = end_idx - start_idx
         weight, bias = self.solver.fit_cv(masks, outputs, alphas = [0.001, 0.0001, 0.00001])
@@ -274,7 +257,7 @@ class GroqContextCiter:
     def get_attributions(self, sentence,
                         as_dataframe: bool = False,
                         top_k: Optional[int] = None,) -> NDArray:
-        attributions, _bias = self._get_attributions_for_ids_range(sentence)
+        attributions, _bias = self._get_attributions_for_sent(sentence)
         if as_dataframe:
             return get_attributions_df(attributions, self.partitioner, top_k=top_k)
         else:
