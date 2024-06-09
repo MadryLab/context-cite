@@ -1,16 +1,26 @@
 import streamlit as st
 from context_cite.cc_groq import GroqContextCiter
-from dotenv import load_dotenv
-import os
 from pinecone import Pinecone
 from openai import OpenAI
+from groq import Groq
+import cohere
 import torch as ch
 from typing import List
 from difflib import get_close_matches
 from nltk.tokenize import sent_tokenize
 
-load_dotenv()
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+COHERE_API_KEY = st.secrets["COHERE_API_KEY"]
 
+openai_client =  OpenAI(
+    api_key=OPENAI_API_KEY,
+)
+
+groq_client = Groq(api_key=GROQ_API_KEY)
+
+cohere_client = cohere.Client(api_key=COHERE_API_KEY)
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -19,10 +29,6 @@ if "messages" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-
-openai_client =  OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-)
 
 def _get_embedding(text) -> List[float]:
     if isinstance(text, str):
@@ -36,22 +42,27 @@ def _get_embedding(text) -> List[float]:
     return embeddings.squeeze().tolist()
 
 # Initialize Pinecone
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+pc = Pinecone(api_key=PINECONE_API_KEY)
 # Connect to the Pinecone index
 index = pc.Index("stanfordrdhack") #index generated from other hackathon project for simplicity
 
 def perform_rag(query):
-    # query_embedding = _get_embedding(query)
+    query_embedding = _get_embedding(query)
     # Perform a similarity search in the Pinecone index
-    # search_results = index.query(vector=query_embedding, namespace='hpp', include_values=True,
-    # include_metadata=True, top_k=5)
+    search_results = index.query(
+        vector=query_embedding,
+        namespace='hpp',
+        include_values=True,
+        include_metadata=True,
+        top_k=5
+    )
 
-    # print(search_results)
+    print(search_results)
     # Extract the most relevant contexts
-    # relevant_contexts = [match['metadata']['text'] for match in search_results['matches']]
+    relevant_contexts = [match['metadata']['text'] for match in search_results['matches']]
 
     # Combine the relevant contexts
-    # combined_context = " ".join(relevant_contexts)
+    combined_context = " ".join(relevant_contexts)
     combined_context = "Hypophosphatasia is a rare, inherited metabolic disorder that affects the development of bones and teeth. It is caused by mutations in the ALPL gene, which encodes an enzyme called alkaline phosphatase. People with hypophosphatasia have low levels of alkaline phosphatase, which leads to abnormal mineralization of bones and teeth. The severity of the condition can vary widely, from mild forms that only affect the teeth to severe forms that can be life-threatening. Treatment for hypophosphatasia is focused on managing symptoms and preventing complications. This may include medications to increase alkaline phosphatase levels, physical therapy, and surgery to correct bone deformities."
     return combined_context
 
@@ -71,7 +82,16 @@ if prompt := st.chat_input("Ask a question about hypophosphatasia:"):
         context = perform_rag(prompt)
 
         # Initialize the GroqContextCiter
-        cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=prompt, num_ablations=8)
+        cc = GroqContextCiter(
+            groq_model='llama3-70b-8192',
+            context=context,
+            query=prompt,
+            groq_client=groq_client,
+            openai_client=openai_client,
+            cohere_client=cohere_client,
+            num_ablations=8
+        )
+
         if "cc" not in st.session_state:
             st.session_state.cc = cc
         # Get the response from the model

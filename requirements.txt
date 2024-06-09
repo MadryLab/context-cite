@@ -13,3 +13,4 @@ cohere
 # dotenv
 context-cite
 pinecone
+# streamlit

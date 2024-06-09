@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import torch as ch
-import os   
 from numpy.typing import NDArray
 from typing import Any, Optional, List, Dict, Union
 from context_cite.context_partitioner import BaseContextPartitioner, SimpleContextPartitioner
@@ -13,14 +12,8 @@ from context_cite.utils import (
 )
 import logging
 from tqdm.auto import tqdm
-from groq import Groq
-from openai import OpenAI
 from joblib import Parallel, delayed
-from dotenv import load_dotenv
 import matplotlib.pyplot as plt
-import cohere
-
-load_dotenv()
 
 DEFAULT_GENERATE_KWARGS = {"max_new_tokens": 512, "do_sample": False}
 DEFAULT_PROMPT_TEMPLATE = "Context: {context}\n\nQuery: {query}"
@@ -32,13 +25,13 @@ def _create_mask(size, alpha, seed):
         size = (size,)
     return random.choice([False, True], size=size, p=p)
 
-def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, context, query, partitioner, groq_model, prompt_template):
+def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, query, partitioner, groq_model, groq_client, prompt_template):
     try:
         mask = _create_mask(num_sources, alpha, seed + base_seed)
         ablated_context = partitioner.get_context(mask)
         prompt = prompt_template.format(context=ablated_context, query=query)
         messages = [{"role": "user", "content": prompt}]
-        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        
         chat_completion = groq_client.chat.completions.create(
             messages=messages,
             model=groq_model,
@@ -54,6 +47,9 @@ class GroqContextCiter:
         groq_model: str, 
         context: str,
         query: str,
+        groq_client,
+        cohere_client,
+        openai_client,
         source_type: str = "sentence",
         generate_kwargs: Optional[Dict[str, Any]] = None,
         num_ablations: int = 64,
@@ -124,22 +120,12 @@ class GroqContextCiter:
         self.logger = logging.getLogger("ContextCite")
         self.logger.setLevel(logging.DEBUG)  # TODO: change to INFO later
 
-        self.groq_model = groq_model
         self.context = context
-
-        self.openai_client = OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
-
-        self.groq_client = Groq(
-            api_key=os.getenv("GROQ_API_KEY"),
-        )
-        
-        self.cohere_client = cohere.Client(
-            os.getenv("COHERE_API_KEY")
-        )
-
-        self.embedding_dim = int(os.getenv("OPENAI_EMBEDDING_DIM"))
+        self.groq_model = groq_model
+        self.groq_client = groq_client
+        self.cohere_client = cohere_client
+        self.openai_client = openai_client
+        self.embedding_dim = 256 #hardcoded to match our vector db for hpp
 
     @property
     def response_with_indices(self, split_by="word", color=True) -> [str, pd.DataFrame]:
@@ -243,7 +229,7 @@ class GroqContextCiter:
         # masks = ch.tensor([_create_mask(num_sources, alpha, seed + base_seed) for seed in tqdm(range(num_masks))], dtype=ch.bool)
 
         args = [
-            (seed, num_sources, alpha, base_seed, self.context, self.query, self.partitioner, self.groq_model, self.prompt_template)
+            (seed, num_sources, alpha, base_seed,  self.query, self.partitioner, self.groq_model, self.groq_client, self.prompt_template)
             for seed in range(num_masks)
         ]
 
@@ -306,25 +292,3 @@ class GroqContextCiter:
             return get_attributions_df(attributions, self.partitioner, top_k=top_k)
         else:
             return attributions
-
-if __name__ == "__main__":
-    context = """
-    Attention Is All You Need
-
-    Abstract
-    The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.
-    1 Introduction
-    Recurrent neural networks, long short-term memory [13] and gated recurrent [7] neural networks in particular, have been firmly established as state of the art approaches in sequence modeling and transduction problems such as language modeling and machine translation [35, 2, 5]. Numerous efforts have since continued to push the boundaries of recurrent language models and encoder-decoder architectures [38, 24, 15].
-    Recurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states ht, as a function of the previous hidden state ht-1 and the input for position t. This inherently sequential nature precludes parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. Recent work has achieved significant improvements in computational efficiency through factorization tricks [21] and conditional computation [32], while also improving model performance in case of the latter. The fundamental constraint of sequential computation, however, remains.
-    Attention mechanisms have become an integral part of compelling sequence modeling and transduction models in various tasks, allowing modeling of dependencies without regard to their distance in the input or output sequences [2, 19]. In all but a few cases [27], however, such attention mechanisms are used in conjunction with a recurrent network.
-    In this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.
-    """
-    query = "What type of GPUs did the authors use in this paper?"
-
-    cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=query, num_ablations=8)
-    # %%
-    cc.response
-    # %%
-    results = cc.get_attributions(as_dataframe=True, top_k=5)
-    print(results.data)
-    results
