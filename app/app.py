@@ -67,11 +67,8 @@ def perform_rag(query):
 
     # Combine the relevant contexts
     combined_context = " ".join(relevant_contexts)
-    combined_context = "Hypophosphatasia is a rare, inherited metabolic disorder that affects the development of bones and teeth. It is caused by mutations in the ALPL gene, which encodes an enzyme called alkaline phosphatase. People with hypophosphatasia have low levels of alkaline phosphatase, which leads to abnormal mineralization of bones and teeth. The severity of the condition can vary widely, from mild forms that only affect the teeth to severe forms that can be life-threatening. Treatment for hypophosphatasia is focused on managing symptoms and preventing complications. This may include medications to increase alkaline phosphatase levels, physical therapy, and surgery to correct bone deformities."
+    combined_context += "Hypophosphatasia is a rare, inherited metabolic disorder that affects the development of bones and teeth. It is caused by mutations in the ALPL gene, which encodes an enzyme called alkaline phosphatase. People with hypophosphatasia have low levels of alkaline phosphatase, which leads to abnormal mineralization of bones and teeth. The severity of the condition can vary widely, from mild forms that only affect the teeth to severe forms that can be life-threatening. Treatment for hypophosphatasia is focused on managing symptoms and preventing complications. This may include medications to increase alkaline phosphatase levels, physical therapy, and surgery to correct bone deformities."
     return combined_context
-
-if "response" not in st.session_state:
-    st.session_state.response = None
 
 # Accept user input
 if prompt := st.chat_input("Ask a question about hypophosphatasia:"):
@@ -80,39 +77,36 @@ if prompt := st.chat_input("Ask a question about hypophosphatasia:"):
     # Display user message in chat message container
     with st.chat_message("user"):
         st.markdown(prompt)
+    # Define the context
+    context = perform_rag(prompt)
+    # Add the context from the chat messages including roles
+    chat_history_context = " ".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.messages])
+    context = f"{chat_history_context} {context}"
 
-    if st.session_state.response is None:
-        # Define the context
-        context = perform_rag(prompt)
-
-        # Initialize the GroqContextCiter
-        cc = GroqContextCiter(
-            groq_model='llama3-70b-8192',
-            context=context,
-            query=prompt,
-            groq_client=groq_client,
-            openai_client=openai_client,
-            cohere_client=cohere_client,
-            num_ablations=8
-        )
-
-        if "cc" not in st.session_state:
-            st.session_state.cc = cc
-        # Get the response from the model
-        response = cc.response
-        st.session_state.response = response
-        # Display assistant response in chat message container
-        with st.chat_message("assistant"):
-            st.markdown(response)
-        # Add assistant response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    # Initialize the GroqContextCiter
+    cc = GroqContextCiter(
+        groq_model='llama3-70b-8192',
+        context=context,
+        query=prompt,
+        groq_client=groq_client,
+        openai_client=openai_client,
+        cohere_client=cohere_client,
+        num_ablations=8
+    )
+    st.session_state.cc = cc
+    # Get the response from the model
+    response = cc.response
+    # Display assistant response in chat message container
+    with st.chat_message("assistant"):
+        st.markdown(response)
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
     if prompt.startswith("\\cite") and st.session_state.cc is not None:
         # Assuming 'results' is already defined as per the instructions
-        sentence = prompt.split("\\cite")[1].strip()
-        response = st.session_state.response
-        answer_sentences = sent_tokenize(response)
         cc = st.session_state.cc
+        sentence = prompt.split("\\cite")[1].strip()
+        answer_sentences = sent_tokenize(response)
         # Fuzzily find the closest sentence in answer_sentences
         closest_sentence = get_close_matches(sentence, answer_sentences, n=1, cutoff=0.0)
         

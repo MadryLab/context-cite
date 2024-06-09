@@ -13,7 +13,10 @@ from context_cite.utils import (
 import logging
 from tqdm.auto import tqdm
 from joblib import Parallel, delayed
-# import matplotlib.pyplot as plt
+from groq import Groq
+import streamlit as st
+
+GROQ_API_KEY = st.secrets['GROQ_API_KEY']
 
 DEFAULT_GENERATE_KWARGS = {"max_new_tokens": 512, "do_sample": False}
 DEFAULT_PROMPT_TEMPLATE = "Context: {context}\n\nQuery: {query}"
@@ -25,13 +28,15 @@ def _create_mask(size, alpha, seed):
         size = (size,)
     return random.choice([False, True], size=size, p=p)
 
-def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, query, partitioner, groq_model, groq_client, prompt_template):
+def _parallel_call_groq_joblib(seed, num_sources, alpha, base_seed, query, partitioner, groq_model, prompt_template):
     try:
         mask = _create_mask(num_sources, alpha, seed + base_seed)
         ablated_context = partitioner.get_context(mask)
         prompt = prompt_template.format(context=ablated_context, query=query)
         messages = [{"role": "user", "content": prompt}]
-        
+        groq_client = Groq(
+            api_key=GROQ_API_KEY
+        )
         chat_completion = groq_client.chat.completions.create(
             messages=messages,
             model=groq_model,
@@ -229,7 +234,7 @@ class GroqContextCiter:
         # masks = ch.tensor([_create_mask(num_sources, alpha, seed + base_seed) for seed in tqdm(range(num_masks))], dtype=ch.bool)
 
         args = [
-            (seed, num_sources, alpha, base_seed,  self.query, self.partitioner, self.groq_model, self.groq_client, self.prompt_template)
+            (seed, num_sources, alpha, base_seed, self.query, self.partitioner, self.groq_model, self.prompt_template)
             for seed in range(num_masks)
         ]
 
