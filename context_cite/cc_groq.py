@@ -361,6 +361,7 @@ class GroqContextCiter:
         masks = masks[valid_indices]
         parts = np.array(self.partitioner.parts)
         context_source_lists = [list(parts[mask]) for mask in masks]
+        outputs = []
         for i, source in enumerate(context_source_lists):
             response = self.cohere_client.rerank(
                 model="rerank-english-v3.0",
@@ -368,12 +369,15 @@ class GroqContextCiter:
                 documents=source,
                 # top_n=3,
             )
-            response
-        embed_responses = self._get_embedding(responses)
-        cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
+            top_relevance_score = response.results[0].relevance_score
+            outputs.append(top_relevance_score)
+
+        outputs = ch.tensor(outputs, dtype=ch.float32)
+        # embed_responses = self._get_embedding(responses)
+        # cosine_sims = ch.nn.functional.cosine_similarity(embed_selected_response, ch.tensor(embed_responses), dim=1).numpy()
         # Save masks and cosine similarities to files
-        self._visualize(masks, cosine_sims)
-        return masks, cosine_sims
+        self._visualize(masks, outputs)
+        return masks, outputs
 
     def _visualize(self, masks, cosine_sims):
         data = {
@@ -422,7 +426,7 @@ if __name__ == "__main__":
     """
     query = "What type of GPUs did the authors use in this paper?"
 
-    cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=query, num_ablations=32)
+    cc = GroqContextCiter(groq_model='llama3-70b-8192', context=context, query=query, num_ablations=8)
     # %%
     cc.response
     # %%
