@@ -97,7 +97,8 @@ if prompt := st.chat_input("Ask a question about hypophosphatasia:"):
             closest_sentence = "No close match found."
 
         st.write(f"Closest sentence: {closest_sentence}")
-        attr_df = cc.get_attributions(closest_sentence, as_dataframe=True, top_k=5).data
+        # attr_df = cc.get_attributions(closest_sentence, as_dataframe=True, top_k=5).data
+        attr_df = cc.get_rerank_df(closest_sentence, top_k=5)
         attr_df = attr_df[attr_df['Score'] != 0]
         with st.chat_message("assistant"):
             st.write(attr_df)

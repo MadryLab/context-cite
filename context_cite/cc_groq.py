@@ -207,7 +207,28 @@ class GroqContextCiter:
         )
         return chat_completion.choices[0].message.content
 
-    # @property
+    def _rerank_sources(self, docs, query, top_n, return_documents=False):
+        responses = []
+        response = self.cohere_client.rerank(
+            model="rerank-english-v3.0",
+            query=query,
+            documents=docs,
+            top_n=top_n,
+            return_documents=return_documents,
+        )
+        top_relevance_scores = [result.relevance_score for result in response.results]
+        top_documents = [result.document.text for result in response.results]
+        responses.append((top_relevance_scores, top_documents))
+        return responses
+    
+    def get_rerank_df(self, cited_sentence, top_k=5):
+        docs = self.partitioner.parts
+        cohere_responses = self._rerank_sources(docs, cited_sentence, top_k, return_documents=True)
+        scores, docs = zip(*cohere_responses)
+        print(scores, docs)
+        df = pd.DataFrame({'Score': scores[0], 'Source': docs[0]})
+        return df
+
     def causal_reranking(self, selected_response):
         # selected_response = self.response[start_idx:end_idx]
         num_masks = self.num_ablations
@@ -232,17 +253,9 @@ class GroqContextCiter:
         parts = np.array(self.partitioner.parts)
         context_source_lists = [list(parts[mask]) for mask in masks]
         outputs = []
-        for i, source in enumerate(context_source_lists):
-            if not source:
-                outputs.append(0)
-                continue
-            response = self.cohere_client.rerank(
-                model="rerank-english-v3.0",
-                query=self.query,
-                documents=source,
-                top_n=1,
-            )
-            top_relevance_score = response.results[0].relevance_score
+        for source in context_source_lists:
+            cohere_responses = self._rerank_sources(source, self.query, top_n=1)
+            top_relevance_score = cohere_responses[0][0]
             outputs.append(top_relevance_score)
 
         outputs = ch.tensor(outputs, dtype=ch.float32)
