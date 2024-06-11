@@ -15,3 +15,25 @@ For now, we have found that Cohere's reranking model by itself works better than
 - Write more general impl to support multiple APIs.
 
 For more details on causal attributions, reference the blog post for more details from the repo this is based off of here [here](#https://gradientscience.org/contextcite/).
+
+## Setup
+
+1. Create a .streamlit/secrets.toml file with the following:
+```
+GROQ_API_KEY = "your_groq_api_key_here"
+OPENAI_API_KEY = "your_openai_api_key_here"
+COHERE_API_KEY = "your_cohere_api_key_here"
+PINECONE_API_KEY = "your_pinecone_api_key_here"
+```
+
+2. Create a virtual environment and install the requirements:
+```
+pip install -r requirements.txt
+```
+
+And then pip install streamlit
+
+3. Run the app:
+```
+streamlit run app/app.py
+```
