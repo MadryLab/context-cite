@@ -1,0 +1,107 @@
+[
+    {
+        "question":"What is alkaline phosphatase (ALP)?",
+        "answer":"ALP is an enzyme that is essential for the process of building strong bones and teeth. People with hypophosphatasia (HPP) have persistently low ALP, which often explains the frequent bone fractures, tooth loss, and chronic pain that may be experienced throughout their lives.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/what-is-alkaline-phosphatase-alp",
+        "Evaluation":"Feedback: The response provides a detailed and accurate description of alkaline phosphatase (ALP), including its function, structure, and role in mineralization. However, it lacks specific mention of the enzyme's essential role in building strong bones and teeth and the association with hypophosphatasia (HPP) as highlighted in the reference answer. Therefore, while it is factually correct, it is missing some key details that align with the reference answer's focus on bone health and hypophosphatasia. [RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"What is hypophosphatasia (HPP)?",
+        "answer":"HPP is a rare disease that occurs when the body isn't able to create enough normally functioning ALP enzyme to process the phosphate that it needs to make strong bones. In HPP, this leads to development of weak or \u201csoft\u201d bones. Soft bones can cause skeletal deformities, early tooth loss, dental pain, or other related symptoms. Even though HPP is a disease of bone mineralization, it can affect many systems throughout the body and impact overall health as well. HPP is also a chronic disease, so it will likely not go away on its own; therefore, HPP may have a profound effect on performing daily activities.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/what-is-hpp",
+        "Evaluation":"Feedback: The response accurately describes hypophosphatasia (HPP) as a rare, inherited metabolic disorder affecting bone and teeth development, caused by mutations in the ALPL gene. It correctly mentions the role of alkaline phosphatase and the consequences of its low levels, such as abnormal mineralization, fragile bones, skeletal deformities, and dental issues. The response also notes the varying severity of the condition. However, it lacks some details present in the reference answer, such as the impact on overall health and daily activities, and the chronic nature of the disease. Despite this, the response is mostly correct, accurate, and factual. \n\n[RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"Is hypophosphatasia (HPP) a disability?",
+        "answer":"In some cases, HPP can be disabling. Depending on your symptoms and where you live, you may be entitled to support, allowances, a disability pension, or other assistance.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/is-hpp-a-disability",
+        "Evaluation":"Feedback: The response is mostly correct, accurate, and factual. It correctly identifies hypophosphatasia (HPP) as a condition that can significantly impact daily life and functioning, aligning with the reference answer's implication that HPP can be disabling. However, the response goes into more detail than necessary and introduces additional complications and symptoms that, while accurate, are not directly addressed in the reference answer. The response may benefit from a more concise focus on whether HPP can be considered a disability, similar to the reference answer.\n\n[RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"What types of medications could be harmful for someone with hypophosphatasia (HPP)?",
+        "answer":"You should talk to your doctor and pharmacist before starting or stopping any medication. Additionally, some medications given to treat common misdiagnoses, such as osteoporosis, can cause HPP to worsen. That\u2019s why it\u2019s so important to get an accurate diagnosis early.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/what-medications-are-harmful-for-hpp",
+        "Evaluation":"Feedback: The response identifies specific medications (Bisphosphonates and Calcium and vitamin D supplementation) that could be harmful to someone with hypophosphatasia (HPP), which is not mentioned in the reference answer. The reference answer emphasizes the importance of consulting healthcare professionals and the risk of medications for misdiagnosed conditions like osteoporosis. While the response provides relevant information, it diverges from the reference answer's focus on consultation and accurate diagnosis, indicating a lack of alignment with the reference response's emphasis on accuracy in diagnosis and professional consultation. Therefore, the response is somewhat correct and accurate but does not fully align with the reference answer. [RESULT] 3",
+        "Score":"3"
+    },
+    {
+        "question":"Who can be diagnosed with hypophosphatasia (HPP)?",
+        "answer":"HPP is a rare but inherited condition, which means that multiple members of the same family could have it. But it\u2019s important to know that anybody at any age can have HPP\u2014from in utero to adulthood.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/who-can-get-hpp",
+        "Evaluation":"Feedback: The response accurately conveys that hypophosphatasia (HPP) can affect individuals of any age, from in utero to adulthood, which aligns with the reference answer. It also provides additional information about the different types of HPP and the stages of life at which symptoms can appear, which is both factually accurate and informative. The response does not deviate from the facts presented in the reference answer and maintains correctness throughout.\n\n[RESULT] 5",
+        "Score":"5"
+    },
+    {
+        "question":"Should I seek genetic testing for hypophosphatasia (HPP)?",
+        "answer":"Whether you seek genetic testing for HPP is up to you and your doctor. It\u2019s important to note that genetic testing is not required to confirm an HPP diagnosis but may be a helpful resource. It could be beneficial to talk to your doctor, which may inform your decision to pursue genetic testing.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/should-i-seek-genetic-testing-for-hpp",
+        "Evaluation":"Feedback: The response provides detailed and accurate information regarding genetic testing for hypophosphatasia (HPP), including specific scenarios where testing might be recommended. It covers a range of situations and symptoms that could warrant genetic testing, aligning well with the reference answer's emphasis on consulting a healthcare professional. However, the response is more elaborate and does not directly address the choice of seeking genetic testing being up to the individual and their doctor, as highlighted in the reference answer. While the response is mostly correct and factual, the additional details, although helpful, slightly diverge from the simplicity and directness of the reference answer.\n\n[RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"How do you test for alkaline phosphatase (ALP)?",
+        "answer":"ALP levels are measured with a standard blood test called a comprehensive blood panel. And it\u2019s important to adjust for age and sex in order to produce an accurate reference range, especially in children.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/how-do-you-test-alp",
+        "Evaluation":"Feedback: The response provides a detailed and accurate description of the procedure for measuring alkaline phosphatase (ALP) levels in a laboratory setting. It includes the steps of sample collection, preparation, incubation, measurement, and calculation, which are all correct and factual. However, the reference answer focuses on the context of a standard blood test and the importance of adjusting for age and sex, which the evaluated response does not mention. While the evaluated response is thorough and accurate in its own right, it misses out on some contextual information highlighted in the reference answer. Therefore, it is mostly correct and factual but not completely aligned with the focus of the reference answer. \n\n[RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"What are some common misdiagnoses and diseases that can look like hypophosphatasia (HPP)?",
+        "answer":"Several conditions share symptoms with HPP, leading to common misdiagnoses from healthcare providers (HCPs). HCPs may initially look for common diseases over rare ones, or for conditions within their specialty. These are some diagnoses people with HPP may receive before getting their correct HPP diagnosis: Bones: Nutritional rickets, X-linked hypophosphatemic rickets, osteopenia\/osteoporosis, osteogenesis imperfecta, osteomalacia Joints: Osteoarthritis\/arthritis, rheumatoid arthritis, fibromyalgia, pseudogout (gout without urate crystal formation) Teeth: Gum disease, dentinogenesis imperfecta",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/what-are-common-misdiagnoses-of-hpp",
+        "Evaluation":"Feedback: The response is mostly correct, accurate, and factual. It accurately lists several diseases that can be mistaken for hypophosphatasia, such as rickets, osteogenesis imperfecta, Paget's disease, rheumatoid arthritis, fibromyalgia, osteoporosis, and osteomalacia. However, it misses some specific details provided in the reference answer, such as nutritional rickets, X-linked hypophosphatemic rickets, pseudogout, gum disease, and dentinogenesis imperfecta. The response also does not specifically mention the context in which HCPs might misdiagnose HPP due to its rarity or their specialization. Therefore, it is mostly correct but lacks some specificity and completeness.\n\n[RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"How is hypophosphatasia (HPP) managed?",
+        "answer":"Management options for HPP exist. Please reach out to your healthcare provider to learn more. Supportive management is also important. This can include physical therapy, treatment for broken bones as they occur, regular dental monitoring, and follow-up care for any complications.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/how-is-hpp-managed",
+        "Evaluation":"Feedback: The response provides a comprehensive and accurate description of the management of hypophosphatasia (HPP), detailing both supportive measures and recent advancements in enzyme replacement therapy. The information is correct and factual, aligning well with the reference answer's emphasis on supportive management and the importance of consulting healthcare providers for treatment options. [RESULT] 5",
+        "Score":"5"
+    },
+    {
+        "question":"How would a healthcare provider diagnose hypophosphatasia (HPP)?",
+        "answer":"The key to a correct diagnosis is hiding in plain sight. A review of a standard blood test called a comprehensive blood panel could be the answer to an HPP diagnosis: Persistently low age- and sex-adjusted ALP + at least one HPP symptom may be enough for a doctor to diagnose HPP, even in kids. A doctor should rule out all other causes of low ALP, and a diagnosis should always be made by a qualified healthcare professional. Learn more about finding a doctor familiar with HPP with the doctor finder here.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/how-is-hpp-diagnosed",
+        "Evaluation":"Feedback: The response is mostly correct, accurate, and factual. It includes detailed steps that a healthcare provider would use to diagnose hypophosphatasia (HPP), such as clinical suspicion, laboratory tests, genetic testing, radiographic findings, and evaluation of medical history and physical examination. However, it is slightly more detailed than the reference answer, which focuses on the key diagnostic factors in a more concise manner. The response also correctly emphasizes the importance of early diagnosis and treatment but does not mention ruling out other causes of low ALP as highlighted in the reference answer. [RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"How common is hypophosphatasia (HPP)?",
+        "answer":"HPP is a rare but inherited disorder, which means that multiple people in the same family may have it. If you have symptoms of HPP, consider having your family members tested, too.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/how-common-is-hpp",
+        "Evaluation":"Feedback: The response provides several specific prevalence rates from various sources and regions, giving a detailed picture of how rare hypophosphatasia (HPP) is. However, it does not mention that HPP is an inherited disorder and that multiple people in the same family may have it, which is a crucial part of the reference answer. While the information given is accurate, it misses a key aspect of the reference answer, making it not completely correct. [RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"What specialists can help with hypophosphatasia (HPP)?",
+        "answer":"Multiple doctors may be involved in the journey to an HPP diagnosis. For older children or adults, these may include a primary care provider, orthopedist, endocrinologist, rheumatologist, and geneticist. Additional doctors who may play a role in diagnosing infants or young children include a pediatric endocrinologist, a maternal-fetal medicine specialist, a neonatologist, or a pediatrician. To find a doctor who specializes in HPP, visit the doctor finder here.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/which-specialists-can-help-with-hpp",
+        "Evaluation":"Feedback: The response lists several specialists who can help with hypophosphatasia (HPP), such as orthopedic surgeons, pediatricians, dentists, endocrinologists, neurologists, physiatrists, pulmonologists, and nutritionists. While some of these professionals overlap with those mentioned in the reference answer (orthopedists and endocrinologists), others do not (e.g., dentists, neurologists, physiatrists, pulmonologists, nutritionists). The reference answer highlights specialists like a primary care provider, rheumatologist, geneticist, and specific pediatric specialists, which are not mentioned in the evaluated response. Therefore, the response is only somewhat correct, accurate, and factual based on the reference answer.\n\n[RESULT] 3",
+        "Score":"3"
+    },
+    {
+        "question":"What are the symptoms of hypophosphatasia (HPP)?",
+        "answer":"The symptoms of HPP may vary from mild to severe and may present differently based on age of onset. Symptoms can also change within the same person over time. HPP can affect bones and teeth, but there are other perplexing symptoms of this metabolic bone disease that form a larger picture of HPP. Some symptoms of HPP may include: Skull and Brain Premature closure of skull bones, leading to abnormally shaped head* Anxiety and depression Seizures* Headaches Fatigue Teeth Early tooth loss with the root intact Receding gums Lungs Improper development of ribs and chest deformities* Difficulty breathing and breathing complications Increased risk of pneumonia Kidneys Calcium buildup in the kidneys Kidney failure Skeleton Rickets Chronic bone pain Frequent or slow-healing fractures Weak bones or bowed legs Joints and Muscles Weakness Pain Arthritis Gout-like symptoms Muscle fatigue Missed motor milestones Mobility issues that may require an assistive device *Symptoms commonly seen in infants and young children. This is not an exhaustive list of HPP signs and symptoms.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/what-are-symptoms-of-hpp",
+        "Evaluation":"Feedback: The response lists a comprehensive array of symptoms associated with hypophosphatasia (HPP) and accurately reflects the diverse manifestations of the disease, including bone fragility, dental issues, muscle weakness, and chronic pain. It acknowledges the variability in symptoms among patients, which aligns with the reference answer. However, it does not cover symptoms related to the skull and brain, lungs, and kidneys, which are present in the reference answer. While it is mostly correct and accurate, it is not as exhaustive as the reference answer. Therefore, it meets the criteria for being mostly correct, accurate, and factual. [RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"What\u2019s the significance of persistently low alkaline phosphatase (ALP)?",
+        "answer":"ALP is an enzyme in the body that is crucial for the development of strong, healthy bones. When a person has persistently low ALP, this can contribute to many of the symptoms people with hypophosphatasia (HPP) experience, including frequent bone injuries and premature tooth loss. It is important for your healthcare provider to observe ALP levels over time, as persistently low ALP may be a sign of HPP.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/what-is-the-significance-of-low-alp",
+        "Evaluation":"Feedback: The response provides a detailed explanation of the significance of persistently low alkaline phosphatase (ALP) levels and mentions hypophosphatasia, which is a relevant genetic disorder. However, it lacks information on the symptoms associated with low ALP levels, such as frequent bone injuries and premature tooth loss, which are mentioned in the reference answer. While the response is informative and mostly accurate, it does not fully align with the reference answer, which provides a more comprehensive understanding of the implications of low ALP levels. [RESULT] 4",
+        "Score":"4"
+    },
+    {
+        "question":"Where can I find support for hypophosphatasia (HPP)?",
+        "answer":"There are many resources and community groups available. Soft Bones is a nonprofit support and advocacy organization for people with HPP. The Avalon Foundation provides emotional support to pediatric patients and their families during life-changing and critical transitions to help shape a healthier, more positive experience that ensures compliant practices and treatments. Global Genes builds awareness, educates the global community, and provides critical connections and resources that equip advocates to become activists for their disease. The National Organization for Rare Disorders (NORD) provides advocacy and education to improve the lives of those affected by rare diseases. The Osteogenesis Imperfecta (OI) Foundation aims to improve the quality of life for those living with OI through research, education, awareness, and mutual support. Peer Connects, offered by Alexion, gives patients and caregivers the opportunity to speak about their experiences living with or caring for someone with a rare health condition. Alexion OneSource\u2122 provides help with insurance, disease state information, and community connection. It is open to all patients with an HPP diagnosis. Unmask HPP by Alexion provides educational events to help raise awareness, share information, and discuss a possible treatment option.",
+        "source":"https:\/\/hypophosphatasia.com\/faqs\/where-can-i-find-hpp-support",
+        "Evaluation":"Feedback: The response is somewhat correct and accurate, as it mentions two valid sources of support for hypophosphatasia (HPP) - Soft Bones and the HPP Registry. However, it misses several other important resources and organizations listed in the reference answer, such as The Avalon Foundation, Global Genes, NORD, the Osteogenesis Imperfecta Foundation, Peer Connects, Alexion OneSource\u2122, and Unmask HPP. This makes the response incomplete in terms of the breadth of resources available for HPP support. [RESULT] 3",
+        "Score":"3"
+    }
+]
